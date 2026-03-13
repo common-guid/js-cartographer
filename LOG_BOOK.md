@@ -1,0 +1,5 @@
+## Pre-execution setup & testing infrastructure | 2026-03-13
+Installed project dependencies, pinned `@babel/parser` and `@babel/traverse` as explicit direct dependencies (required by Phases 4/5), verified clean build and 23/23 unit tests passing, created `.env.example` documenting all environment variables, and created `testing/TESTING_GUIDE.md` as the source-of-truth reference for all test writing in the project.
+
+## webpack-hello-world test fixture | 2026-03-12
+Created `fixtures/webpack-hello-world/` — a self-contained webpack 5 + Babel (IE11 target) application with 4 source files (`math.js`, `greeting.js`, `api.js`, `app.js`) that serves as a ground truth for validating JS Cartographer's deobfuscation pipeline. The pre-built `dist/bundle.js` is committed so it can be used immediately as a test input.
