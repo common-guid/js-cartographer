@@ -55,6 +55,8 @@
     "@google/generative-ai": "^0.24.0",
     "@types/babel__core": "^7.20.5",
     "@types/babel__traverse": "^7.28.0",
+    "@wakaru/unminify": "^0.2.2",
+    "@wakaru/unpacker": "^0.1.2",
     "babel-plugin-transform-beautifier": "^0.1.0",
     "commander": "^13.0.0",
     "dotenv": "^16.4.5",

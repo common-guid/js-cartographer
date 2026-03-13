@@ -2,11 +2,13 @@ import fs from "fs/promises";
 import { ensureFileExists } from "./file-utils.js";
 import { webcrack } from "./plugins/webcrack.js";
 import { verbose } from "./verbose.js";
+import type { WakaruSanitizer } from "./services/sanitizer/index.js";
 
 export async function unminify(
   filename: string,
   outputDir: string,
-  plugins: ((code: string) => Promise<string>)[] = []
+  plugins: ((code: string) => Promise<string>)[] = [],
+  sanitizer?: WakaruSanitizer
 ) {
   ensureFileExists(filename);
   const bundledCode = await fs.readFile(filename, "utf-8");
@@ -16,11 +18,17 @@ export async function unminify(
     console.log(`Processing file ${i + 1}/${extractedFiles.length}`);
 
     const file = extractedFiles[i];
-    const code = await fs.readFile(file.path, "utf-8");
+    let code = await fs.readFile(file.path, "utf-8");
 
     if (code.trim().length === 0) {
       verbose.log(`Skipping empty file ${file.path}`);
       continue;
+    }
+
+    // Pre-processing: run sanitizer before the LLM plugin chain
+    if (sanitizer) {
+      const sanitized = await sanitizer.transform(code, file.path);
+      code = sanitized.code;
     }
 
     const formattedCode = await plugins.reduce(

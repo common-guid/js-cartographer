@@ -7,6 +7,7 @@ import { verbose } from "../verbose.js";
 import { env } from "../env.js";
 import { parseNumber } from "../number-utils.js";
 import { DEFAULT_CONTEXT_WINDOW_SIZE } from "./default-args.js";
+import { WakaruSanitizer } from "../services/sanitizer/index.js";
 
 export const openrouter = cli()
   .name("openrouter")
@@ -28,6 +29,7 @@ export const openrouter = cli()
     "The context size to use for the LLM",
     `${DEFAULT_CONTEXT_WINDOW_SIZE}`
   )
+  .option("--no-sanitizer", "Disable the Wakaru syntax cleanup step")
   .argument("input", "The input minified Javascript file")
   .action(async (filename, opts) => {
     if (opts.verbose) {
@@ -37,14 +39,20 @@ export const openrouter = cli()
     const apiKey = opts.apiKey ?? env("OPENROUTER_API_KEY");
     const baseURL = opts.baseURL;
     const contextWindowSize = parseNumber(opts.contextSize);
-    await unminify(filename, opts.outputDir, [
-      babel,
-      openrouterRename({
-        apiKey,
-        baseURL,
-        model: opts.model,
-        contextWindowSize
-      }),
-      prettier
-    ]);
+    const sanitizer = new WakaruSanitizer({ enabled: opts.sanitizer !== false });
+    await unminify(
+      filename,
+      opts.outputDir,
+      [
+        babel,
+        openrouterRename({
+          apiKey,
+          baseURL,
+          model: opts.model,
+          contextWindowSize
+        }),
+        prettier
+      ],
+      sanitizer
+    );
   });
