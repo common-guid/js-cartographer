@@ -30,6 +30,7 @@ Neither `@wakaru/unminify` nor `@wakaru/unpacker` are currently installed. No `s
 * Update `WakaruSanitizer.transform()` to call `runTransformationRules()` from `@wakaru/unminify` with the rule list, then run Prettier (with nested try/catch so Prettier failure doesn't discard Wakaru output)
 * Update LLM system prompt in each renamer plugin (`src/plugins/openai/openai-rename.ts`, gemini, openrouter, local) to remove "fix syntax" instructions and focus solely on naming
 * **Validation:** A test file with Yoda conditions and generator patterns produces correctly formatted output before reaching the LLM
+* **Phase Plan:** .specs/phase-2.md
 ## Phase 3: Static Analysis & Cost Optimization
 **Goal:** Run Wakaru's heuristic renaming (`smart-rename`) to deterministically name well-known APIs, reducing LLM token spend.
 * Update `SanitizerConfig` in `types.ts` to add `useHeuristicNaming: boolean` flag
@@ -38,18 +39,21 @@ Neither `@wakaru/unminify` nor `@wakaru/unpacker` are currently installed. No `s
 * Add `--no-heuristic-naming` CLI option to each command file; wire it into `SanitizerConfig`
 * Update LLM system prompt with a "NAMING RULES (STRICT)" block: respect already-named variables as locked, only rename still-obfuscated identifiers
 * **Validation:** A test file with `void 0` and DOM access patterns produces metric logs and correctly renamed variables pre-LLM
+* **Phase Plan:** .specs/phase-3.md
 ## Phase 4: Module Intelligence
 **Goal:** After unpacking, scan the output directory to build a project-wide dependency graph (`module-graph.json`).
 * Create `src/services/graph/types.ts` defining `FileNode` (`id`, `imports[]`, `exports[]`) and `ModuleGraph` (`files` record, optional `entryPoint`)
 * Create `src/services/graph/index.ts` with `GraphBuilder` class: recursively finds `.js`/`.ts` files, uses `@babel/parser` + `@babel/traverse` to extract `ImportDeclaration`, `require()` calls, and `ExportNamedDeclaration` nodes
 * Integrate `GraphBuilder` into `unminify.ts` — runs immediately after `webcrack` but before per-file processing; writes `module-graph.json` to the output directory
 * **Validation:** A two-file test project (`main.js` importing from `utils.js`) produces a correct `module-graph.json` with proper `imports` and `exports` arrays
+* **Phase Plan:** .specs/phase-4.md
 ## Phase 5: The Call Graph Implementation
 **Goal:** After LLM renaming completes, analyze the final code to produce a semantic call graph (`call-graph.json`).
 * Create `src/services/callgraph/types.ts` defining `FunctionNode` (`id`, `file`, `name`, `line`), `CallEdge` (`from`, `to`, `type: 'internal'|'external'`), and `CallGraphData` (`nodes` record, `edges` array)
 * Create `src/services/callgraph/index.ts` with `CallGraphBuilder`: two-pass analysis — Pass 1 indexes all top-level `FunctionDeclaration` nodes and import mappings; Pass 2 records `CallExpression` edges (internal vs. external via import map). Extract shared file-listing utility to `src/services/graph/file-utils.ts` to avoid duplication with Phase 4
 * Integrate `CallGraphBuilder` into `unminify.ts` as the final step after all plugins complete; writes `call-graph.json` to output directory
 * **Validation:** Test project `main.js:fnA` calls imported `lib.js:fnB`; `call-graph.json` contains both nodes and the correct edge with `type: 'external'`
+* **Phase Plan:** .specs/phase-5.md
 ## Phase 6: CLI Experience & Visualization
 **Goal:** Expose the call graph to users via a `humanify graph` sub-command with ASCII tree and Mermaid export.
 * Create `src/services/callgraph/presenter.ts` with `GraphPresenter` class implementing:
@@ -59,6 +63,7 @@ Neither `@wakaru/unminify` nor `@wakaru/unpacker` are currently installed. No `s
 * Register the `graph` command in `src/index.ts`
 * Update `README_humanify-plus.md` documenting the new `--no-sanitizer`, `--no-heuristic-naming`, and `graph` sub-command
 * **Validation:** ASCII tree output matches expected tree structure for a test project; `--depth 1` correctly limits traversal; Mermaid export writes a valid `graph TD` file
+* **Phase Plan:** .specs/phase-6.md
 ## Cross-Cutting Concerns
 * Each phase produces its own `.test.ts` unit tests (following the `src/**/*.test.ts` pattern used by `npm run test:unit`) and an E2E test where applicable
 * Each completed feature is appended to `LOG_BOOK.md` per the project rules
