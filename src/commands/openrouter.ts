@@ -39,7 +39,9 @@ export const openrouter = cli()
     const apiKey = opts.apiKey ?? env("OPENROUTER_API_KEY");
     const baseURL = opts.baseURL;
     const contextWindowSize = parseNumber(opts.contextSize);
-    const sanitizer = new WakaruSanitizer({ enabled: opts.sanitizer !== false });
+    const sanitizer = new WakaruSanitizer({
+      enabled: opts.sanitizer !== false
+    });
     await unminify(
       filename,
       opts.outputDir,

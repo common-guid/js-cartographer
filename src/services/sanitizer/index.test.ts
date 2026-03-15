@@ -8,10 +8,10 @@ const SAMPLE_CODE = `function a(b,c){return b+c;}`;
 // Pass-through behaviour
 // ---------------------------------------------------------------------------
 
-test("returns original code unchanged when enabled (Phase 1 pass-through)", async () => {
+test("formats code when enabled", async () => {
   const sanitizer = new WakaruSanitizer({ enabled: true });
   const result = await sanitizer.transform(SAMPLE_CODE, "test.js");
-  assert.strictEqual(result.code, SAMPLE_CODE);
+  assert.ok(result.code.includes("return b + c;"));
 });
 
 test("returns original code unchanged when disabled", async () => {
@@ -34,7 +34,7 @@ test("handles empty code without throwing", async () => {
 test("default constructor enables sanitizer", async () => {
   const sanitizer = new WakaruSanitizer();
   const result = await sanitizer.transform(SAMPLE_CODE, "test.js");
-  assert.strictEqual(result.code, SAMPLE_CODE);
+  assert.ok(result.code.includes("return b + c;"));
 });
 
 // ---------------------------------------------------------------------------
@@ -54,7 +54,10 @@ test("logs [Sanitizer] Processing when enabled", async () => {
   }
 
   assert.ok(
-    logged.some((msg) => msg.includes("[Sanitizer] Processing") && msg.includes("my-file.js")),
+    logged.some(
+      (msg) =>
+        msg.includes("[Sanitizer] Processing") && msg.includes("my-file.js")
+    ),
     `Expected a [Sanitizer] Processing log. Got: ${JSON.stringify(logged)}`
   );
 });
@@ -85,8 +88,7 @@ test("does not throw when an internal error is thrown — returns original code"
   // We create a subclass that overrides transform to simulate a Wakaru failure.
   class BrokenSanitizer extends WakaruSanitizer {
     override async transform(
-      code: string,
-      filepath: string
+      code: string
     ): ReturnType<WakaruSanitizer["transform"]> {
       // Simulate the error path by manually triggering the catch block
       try {
@@ -113,11 +115,11 @@ test("name property is set correctly", () => {
 
 test("sanitizer output can be piped into a string transform plugin", async () => {
   const sanitizer = new WakaruSanitizer({ enabled: true });
-  const append = async (code: string) => code + "/* appended */";
+  const append = async (code: string) => code + "\n/* appended */";
 
   const { code: sanitized } = await sanitizer.transform(SAMPLE_CODE, "test.js");
   const final = await append(sanitized);
 
-  assert.ok(final.includes(SAMPLE_CODE));
+  assert.ok(final.includes("return b + c;"));
   assert.ok(final.includes("/* appended */"));
 });

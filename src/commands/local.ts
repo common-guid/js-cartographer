@@ -42,7 +42,9 @@ export const local = cli()
       disableGpu: opts.disableGpu,
       seed: opts.seed ? parseInt(opts.seed) : undefined
     });
-    const sanitizer = new WakaruSanitizer({ enabled: opts.sanitizer !== false });
+    const sanitizer = new WakaruSanitizer({
+      enabled: opts.sanitizer !== false
+    });
     await unminify(
       filename,
       opts.outputDir,

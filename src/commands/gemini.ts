@@ -33,11 +33,17 @@ export const azure = cli()
 
     const apiKey = opts.apiKey ?? env("GEMINI_API_KEY");
     const contextWindowSize = parseNumber(opts.contextSize);
-    const sanitizer = new WakaruSanitizer({ enabled: opts.sanitizer !== false });
+    const sanitizer = new WakaruSanitizer({
+      enabled: opts.sanitizer !== false
+    });
     await unminify(
       filename,
       opts.outputDir,
-      [babel, geminiRename({ apiKey, model: opts.model, contextWindowSize }), prettier],
+      [
+        babel,
+        geminiRename({ apiKey, model: opts.model, contextWindowSize }),
+        prettier
+      ],
       sanitizer
     );
   });

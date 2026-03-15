@@ -1,6 +1,12 @@
 import { createRequire } from "node:module";
 import type { runTransformationRules as RunTransformationRulesFn } from "@wakaru/unminify";
-import type { CodeTransformer, SanitizerConfig, TransformationResult } from "./types.js";
+import type {
+  CodeTransformer,
+  SanitizerConfig,
+  TransformationResult
+} from "./types.js";
+import { SANITIZER_RULES } from "./rules.js";
+import * as prettier from "prettier";
 
 /**
  * @wakaru/unminify MUST be loaded via createRequire (CJS build) because its ESM
@@ -41,16 +47,35 @@ export class WakaruSanitizer implements CodeTransformer {
 
     try {
       // --- PHASE 2 LOGIC GOES HERE ---
-      // const { runTransformationRules } = loadWakaru();
-      // const result = await runTransformationRules(
-      //   { path: filepath, source: code },
-      //   SANITIZER_RULES
-      // );
-      // return { code: result.code, map: result.sourceMap };
+      const { runTransformationRules } = loadWakaru();
+      const result = await runTransformationRules(
+        { path: filepath, source: code },
+        SANITIZER_RULES
+      );
 
-      // Pass-through for Phase 1
-      void loadWakaru; // reference to satisfy the unused-import check; removed in Phase 2
-      return { code };
+      let cleanCode = result.code;
+
+      // 2. Run Prettier (Formatting)
+      // We wrap this in a sub-try/catch because if Prettier fails
+      // (due to some weird syntax edge case), we still want the Wakaru result.
+      try {
+        cleanCode = await prettier.format(cleanCode, {
+          parser: "babel",
+          semi: true,
+          singleQuote: true,
+          trailingComma: "es5"
+        });
+      } catch {
+        console.warn(
+          `[Sanitizer] Prettier failed to format ${filepath}, returning unformatted clean code.`
+        );
+      }
+
+      // 3. Return the polished code
+      return {
+        code: cleanCode,
+        map: result.sourceMap // Preserve for Phase 4/5
+      };
     } catch (error) {
       // 2. Error Swallow Pattern
       // If Wakaru crashes, we MUST NOT crash the whole tool.

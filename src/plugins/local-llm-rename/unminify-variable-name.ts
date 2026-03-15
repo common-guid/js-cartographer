@@ -12,7 +12,9 @@ export async function unminifyVariableName(
   verbose.log("Surrounding code:", code);
 
   const description = await prompt(
-    `Your task is to read the code in file "${filename}" and write the purpose of variable, argument or function '${variableName}' in one sentence. Use simple language so it's understandable by a junior programmer.`,
+    `Your task is to read the code in file "${filename}" and write the purpose of variable, argument or function '${variableName}' in one sentence. Use simple language so it's understandable by a junior programmer.
+
+The code you receive has already been structurally de-transpiled and formatted. DO NOT attempt to restructure logic (loops, classes, async/await) unless strictly necessary. Your PRIMARY task is to infer the purpose of variables/functions and rename them to meaningful English names.`,
     code,
     gbnf`A good description for '${variableName}' is: ${/[^\r\n\x0b\x0c\x85\u2028\u2029.]+/}.`
   );

@@ -59,7 +59,9 @@ function toRenamePrompt(
     messages: [
       {
         role: "system",
-        content: `Rename Javascript variables/function \`${name}\` to have descriptive name based on their usage in the code."`
+        content: `Rename Javascript variables/function \`${name}\` to have descriptive name based on their usage in the code.
+
+The code you receive has already been structurally de-transpiled and formatted. DO NOT attempt to restructure logic (loops, classes, async/await) unless strictly necessary. Your PRIMARY task is to infer the purpose of variables/functions and rename them to meaningful English names.`
       },
       {
         role: "user",
