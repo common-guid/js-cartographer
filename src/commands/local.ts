@@ -28,6 +28,10 @@ export const local = cli()
     `${DEFAULT_CONTEXT_WINDOW_SIZE}`
   )
   .option("--no-sanitizer", "Disable the Wakaru syntax cleanup step")
+  .option(
+    "--no-heuristic-naming",
+    "Disable static renaming (Phase 3 optimization)"
+  )
   .argument("input", "The input minified Javascript file")
   .action(async (filename, opts) => {
     if (opts.verbose) {
@@ -43,7 +47,8 @@ export const local = cli()
       seed: opts.seed ? parseInt(opts.seed) : undefined
     });
     const sanitizer = new WakaruSanitizer({
-      enabled: opts.sanitizer !== false
+      enabled: opts.sanitizer !== false,
+      useHeuristicNaming: opts.heuristicNaming !== false
     });
     await unminify(
       filename,

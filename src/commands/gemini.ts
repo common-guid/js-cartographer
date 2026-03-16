@@ -25,6 +25,10 @@ export const azure = cli()
   )
   .option("--verbose", "Show verbose output")
   .option("--no-sanitizer", "Disable the Wakaru syntax cleanup step")
+  .option(
+    "--no-heuristic-naming",
+    "Disable static renaming (Phase 3 optimization)"
+  )
   .argument("input", "The input minified Javascript file")
   .action(async (filename, opts) => {
     if (opts.verbose) {
@@ -34,7 +38,8 @@ export const azure = cli()
     const apiKey = opts.apiKey ?? env("GEMINI_API_KEY");
     const contextWindowSize = parseNumber(opts.contextSize);
     const sanitizer = new WakaruSanitizer({
-      enabled: opts.sanitizer !== false
+      enabled: opts.sanitizer !== false,
+      useHeuristicNaming: opts.heuristicNaming !== false
     });
     await unminify(
       filename,

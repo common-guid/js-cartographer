@@ -3,7 +3,7 @@
  * These focus on Structural Restoration (fixing compiler artifacts)
  * and Readability (making code scanable).
  */
-export const SANITIZER_RULES: string[] = [
+export const STRUCTURAL_RULES: string[] = [
   // --- 1. STRUCTURAL RESTORATION (The Heavy Lifting) ---
   "un-async-await", // Critical: Restores async/await from generator state machines
   "un-jsx", // Critical: Restores <div /> from React.createElement()
@@ -19,4 +19,14 @@ export const SANITIZER_RULES: string[] = [
   "un-variable-merging", // Un-merges unrelated "var a, b, c" declarations.
   "un-curly-braces", // Adds { } to single-line if-statements.
   "un-flip-comparisons" // Fixes Yoda conditions (null == a -> a == null)
+];
+
+/**
+ * Rules for Phase 3 (Static Analysis & Optimization)
+ */
+export const HEURISTIC_RULES: string[] = [
+  "un-undefined",       // void 0 -> undefined
+  "un-infinity",        // 1/0 -> Infinity
+  "un-numeric-literal", // 0x123 -> 291 (Normalizes numbers)
+  "smart-rename"        // Renames variables based on DOM/Node usage
 ];

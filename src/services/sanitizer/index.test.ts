@@ -41,7 +41,7 @@ test("default constructor enables sanitizer", async () => {
 // Logging behaviour
 // ---------------------------------------------------------------------------
 
-test("logs [Sanitizer] Processing when enabled", async () => {
+test("logs [Sanitizer] Optimizing when enabled", async () => {
   const sanitizer = new WakaruSanitizer({ enabled: true });
   const logged: string[] = [];
   const originalLog = console.log;
@@ -56,13 +56,13 @@ test("logs [Sanitizer] Processing when enabled", async () => {
   assert.ok(
     logged.some(
       (msg) =>
-        msg.includes("[Sanitizer] Processing") && msg.includes("my-file.js")
+        msg.includes("[Sanitizer] Optimizing") && msg.includes("my-file.js")
     ),
-    `Expected a [Sanitizer] Processing log. Got: ${JSON.stringify(logged)}`
+    `Expected a [Sanitizer] Optimizing log. Got: ${JSON.stringify(logged)}`
   );
 });
 
-test("does NOT log [Sanitizer] Processing when disabled", async () => {
+test("does NOT log [Sanitizer] Optimizing when disabled", async () => {
   const sanitizer = new WakaruSanitizer({ enabled: false });
   const logged: string[] = [];
   const originalLog = console.log;

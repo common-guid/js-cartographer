@@ -58,7 +58,7 @@ for (const cmd of ["openai", "gemini", "openrouter"]) {
 // Requires: npm run build (handled by npm run test:e2e automatically)
 // ---------------------------------------------------------------------------
 
-test("sanitizer logs [Sanitizer] Processing when run against fixture bundle", async () => {
+test("sanitizer logs [Sanitizer] Optimizing when run against fixture bundle", async () => {
   // We expect this to fail (no API key) but the [Sanitizer] log should appear first.
   // We capture stderr+stdout and check the log is present.
   let output = "";
@@ -79,12 +79,12 @@ test("sanitizer logs [Sanitizer] Processing when run against fixture bundle", as
   }
 
   assert.ok(
-    output.includes("[Sanitizer] Processing"),
-    `Expected "[Sanitizer] Processing" in output. Got: ${output.slice(0, 500)}`
+    output.includes("[Sanitizer] Optimizing"),
+    `Expected "[Sanitizer] Optimizing" in output. Got: ${output.slice(0, 500)}`
   );
 });
 
-test("--no-sanitizer suppresses [Sanitizer] Processing log against fixture bundle", async () => {
+test("--no-sanitizer suppresses [Sanitizer] Optimizing log against fixture bundle", async () => {
   let output = "";
   try {
     const result = await humanify(
@@ -102,7 +102,7 @@ test("--no-sanitizer suppresses [Sanitizer] Processing log against fixture bundl
   }
 
   assert.ok(
-    !output.includes("[Sanitizer] Processing"),
-    `Expected NO "[Sanitizer] Processing" when --no-sanitizer used. Got: ${output.slice(0, 500)}`
+    !output.includes("[Sanitizer] Optimizing"),
+    `Expected NO "[Sanitizer] Optimizing" when --no-sanitizer used. Got: ${output.slice(0, 500)}`
   );
 });

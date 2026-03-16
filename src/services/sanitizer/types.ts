@@ -5,6 +5,13 @@ export interface SanitizerConfig {
    * Useful for the CLI flag --no-sanitizer.
    */
   enabled: boolean;
+
+  /**
+   * Phase 3 Toggle: Enables heuristic renaming (smart-rename) and
+   * constant simplification (un-undefined, un-infinity).
+   * Default: true
+   */
+  useHeuristicNaming?: boolean;
 }
 
 export interface TransformationResult {

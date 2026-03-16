@@ -5,7 +5,7 @@ import type {
   SanitizerConfig,
   TransformationResult
 } from "./types.js";
-import { SANITIZER_RULES } from "./rules.js";
+import { STRUCTURAL_RULES, HEURISTIC_RULES } from "./rules.js";
 import * as prettier from "prettier";
 
 /**
@@ -30,7 +30,8 @@ export class WakaruSanitizer implements CodeTransformer {
   private config: SanitizerConfig;
 
   constructor(config: SanitizerConfig = { enabled: true }) {
-    this.config = config;
+    // Ensure defaults are set if partial config provided
+    this.config = { enabled: true, useHeuristicNaming: true, ...config };
   }
 
   async transform(
@@ -43,17 +44,38 @@ export class WakaruSanitizer implements CodeTransformer {
       return { code };
     }
 
-    console.log(`[Sanitizer] Processing ${filepath}...`);
+    const originalLength = code.length;
+
+    // Build the rule list based on config
+    const activeRules = [...STRUCTURAL_RULES];
+    if (this.config.useHeuristicNaming) {
+      activeRules.push(...HEURISTIC_RULES);
+    }
+
+    console.log(`[Sanitizer] Optimizing ${filepath}...`);
 
     try {
       // --- PHASE 2 LOGIC GOES HERE ---
       const { runTransformationRules } = loadWakaru();
       const result = await runTransformationRules(
         { path: filepath, source: code },
-        SANITIZER_RULES
+        activeRules
       );
 
       let cleanCode = result.code;
+
+      // 2. Metric Logging (The "Hype")
+      if (this.config.useHeuristicNaming) {
+        const newLength = cleanCode.length;
+        const savings = originalLength - newLength;
+        const savingsPercent = ((savings / originalLength) * 100).toFixed(1);
+
+        if (savings > 0) {
+          console.log(
+            `[Sanitizer] ⚡ Optimized size by ${savingsPercent}% (${savings} chars) via static analysis.`
+          );
+        }
+      }
 
       // 2. Run Prettier (Formatting)
       // We wrap this in a sub-try/catch because if Prettier fails
