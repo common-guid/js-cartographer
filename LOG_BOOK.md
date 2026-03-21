@@ -8,3 +8,6 @@ Installed project dependencies, pinned `@babel/parser` and `@babel/traverse` as 
 Created `fixtures/webpack-hello-world/` — a self-contained webpack 5 + Babel (IE11 target) application with 4 source files (`math.js`, `greeting.js`, `api.js`, `app.js`) that serves as a ground truth for validating JS Cartographer's deobfuscation pipeline. The pre-built `dist/bundle.js` is committed so it can be used immediately as a test input.
 ## Phase 3: Static Analysis & Cost Optimization | March 16 2026
 Implemented Wakaru's heuristic renaming and static analysis as the third phase of the deobfuscation pipeline. Added strict rules for LLM prompts to skip pre-analyzed code blocks and logs metric size reductions.
+
+## Phase 4: Module Intelligence | 2024-10-26
+Implemented a `GraphBuilder` service that uses `@babel/parser` and `@babel/traverse` to scan unbundled files and generate a `module-graph.json` mapping out all internal dependencies (imports/requires) and named exports. The service runs immediately after the Webcrack phase in `unminify.ts`.

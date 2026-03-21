@@ -1,8 +1,10 @@
 import fs from "fs/promises";
+import path from "node:path";
 import { ensureFileExists } from "./file-utils.js";
 import { webcrack } from "./plugins/webcrack.js";
 import { verbose } from "./verbose.js";
 import type { WakaruSanitizer } from "./services/sanitizer/index.js";
+import { GraphBuilder } from "./services/graph/index.js";
 
 export async function unminify(
   filename: string,
@@ -13,6 +15,13 @@ export async function unminify(
   ensureFileExists(filename);
   const bundledCode = await fs.readFile(filename, "utf-8");
   const extractedFiles = await webcrack(bundledCode, outputDir);
+
+  // Build Module Graph (Phase 4)
+  const graphBuilder = new GraphBuilder();
+  const graph = await graphBuilder.build(outputDir);
+  const graphPath = path.join(outputDir, 'module-graph.json');
+  await fs.writeFile(graphPath, JSON.stringify(graph, null, 2));
+  console.log(`[Graph] Dependency map saved to ${graphPath}`);
 
   for (let i = 0; i < extractedFiles.length; i++) {
     console.log(`Processing file ${i + 1}/${extractedFiles.length}`);
