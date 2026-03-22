@@ -3,22 +3,11 @@ import path from 'node:path';
 import { parse } from '@babel/parser';
 import _traverse from '@babel/traverse';
 import { ModuleGraph } from './types.js';
+import { getFiles } from './file-utils.js';
 
 // The ESM import of @babel/traverse can be tricky depending on the environment
 // We handle both default import and namespace import
 const traverse = (typeof _traverse === 'function' ? _traverse : (_traverse as any).default) as typeof _traverse;
-
-// Helper to recursively find all .js files
-export async function getFiles(dir: string): Promise<string[]> {
-  const dirents = await fs.readdir(dir, { withFileTypes: true });
-  const files = await Promise.all(
-    dirents.map(async (dirent) => {
-      const res = path.resolve(dir, dirent.name);
-      return dirent.isDirectory() ? getFiles(res) : res;
-    })
-  );
-  return files.flat().filter((f) => f.endsWith('.js') || f.endsWith('.ts'));
-}
 
 export class GraphBuilder {
   async build(directory: string): Promise<ModuleGraph> {

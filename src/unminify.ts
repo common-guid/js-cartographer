@@ -5,6 +5,7 @@ import { webcrack } from "./plugins/webcrack.js";
 import { verbose } from "./verbose.js";
 import type { WakaruSanitizer } from "./services/sanitizer/index.js";
 import { GraphBuilder } from "./services/graph/index.js";
+import { CallGraphBuilder } from "./services/callgraph/index.js";
 
 export async function unminify(
   filename: string,
@@ -50,6 +51,15 @@ export async function unminify(
 
     await fs.writeFile(file.path, formattedCode);
   }
+
+  // Build Semantic Call Graph (Phase 5)
+  console.log('[Phase 5] Building Call Graph...');
+  const callGraphBuilder = new CallGraphBuilder();
+  const callGraph = await callGraphBuilder.build(outputDir);
+
+  const callGraphPath = path.join(outputDir, 'call-graph.json');
+  await fs.writeFile(callGraphPath, JSON.stringify(callGraph, null, 2));
+  console.log(`[CallGraph] Graph data saved to ${callGraphPath}`);
 
   console.log(`Done! You can find your unminified code in ${outputDir}`);
 }

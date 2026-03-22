@@ -11,3 +11,6 @@ Implemented Wakaru's heuristic renaming and static analysis as the third phase o
 
 ## Phase 4: Module Intelligence | 2024-10-26
 Implemented a `GraphBuilder` service that uses `@babel/parser` and `@babel/traverse` to scan unbundled files and generate a `module-graph.json` mapping out all internal dependencies (imports/requires) and named exports. The service runs immediately after the Webcrack phase in `unminify.ts`.
+
+## Phase 5: The Call Graph Implementation | 2024-10-26
+Implemented `CallGraphBuilder` service that uses `@babel/parser` and `@babel/traverse` to scan renamed files and generate a semantic `call-graph.json` connecting defined functions to their usage sites. Integrated into the main CLI pipeline in `src/unminify.ts` to run as the final step. Created required test cases and generated test reports.
