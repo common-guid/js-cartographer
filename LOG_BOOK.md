@@ -14,3 +14,6 @@ Implemented a `GraphBuilder` service that uses `@babel/parser` and `@babel/trave
 
 ## Phase 5: The Call Graph Implementation | 2024-10-26
 Implemented `CallGraphBuilder` service that uses `@babel/parser` and `@babel/traverse` to scan renamed files and generate a semantic `call-graph.json` connecting defined functions to their usage sites. Integrated into the main CLI pipeline in `src/unminify.ts` to run as the final step. Created required test cases and generated test reports.
+
+## Phase 6: CLI Experience & Visualization | 2024-10-26
+Implemented `GraphPresenter` to generate depth-limited ASCII trees and Mermaid charts from the `call-graph.json` data. Exposed the functionality via the new `humanify graph` sub-command. Added comprehensive unit and E2E tests, and updated the README documentation.

@@ -6,6 +6,7 @@ import { openai } from "./commands/openai.js";
 import { cli } from "./cli.js";
 import { azure } from "./commands/gemini.js";
 import { openrouter } from "./commands/openrouter.js";
+import { graph } from "./commands/graph.js";
 
 cli()
   .name("humanify")
@@ -16,4 +17,5 @@ cli()
   .addCommand(azure)
   .addCommand(openrouter)
   .addCommand(download())
+  .addCommand(graph)
   .parse(process.argv);
