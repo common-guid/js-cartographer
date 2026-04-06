@@ -8,6 +8,7 @@ import { env } from "../env.js";
 import { parseNumber } from "../number-utils.js";
 import { DEFAULT_CONTEXT_WINDOW_SIZE } from "./default-args.js";
 import { WakaruSanitizer } from "../services/sanitizer/index.js";
+import { DEFAULT_FILE_CONCURRENCY } from "../unminify.js";
 
 export const openrouter = cli()
   .name("openrouter")
@@ -28,6 +29,11 @@ export const openrouter = cli()
     "--contextSize <contextSize>",
     "The context size to use for the LLM",
     `${DEFAULT_CONTEXT_WINDOW_SIZE}`
+  )
+  .option(
+    "--file-concurrency <n>",
+    "Number of files to process in parallel",
+    `${DEFAULT_FILE_CONCURRENCY}`
   )
   .option("--rename-all", "Send all identifiers to the LLM (skip smart filtering)")
   .option("--no-sanitizer", "Disable the Wakaru syntax cleanup step")
@@ -62,6 +68,7 @@ export const openrouter = cli()
         }),
         prettier
       ],
-      sanitizer
+      sanitizer,
+      parseNumber(opts.fileConcurrency)
     );
   });

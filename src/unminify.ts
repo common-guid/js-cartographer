@@ -6,12 +6,16 @@ import { verbose } from "./verbose.js";
 import type { WakaruSanitizer } from "./services/sanitizer/index.js";
 import { GraphBuilder } from "./services/graph/index.js";
 import { CallGraphBuilder } from "./services/callgraph/index.js";
+import { pLimit } from "./concurrency.js";
+
+export const DEFAULT_FILE_CONCURRENCY = 3;
 
 export async function unminify(
   filename: string,
   outputDir: string,
   plugins: ((code: string) => Promise<string>)[] = [],
-  sanitizer?: WakaruSanitizer
+  sanitizer?: WakaruSanitizer,
+  fileConcurrency: number = DEFAULT_FILE_CONCURRENCY
 ) {
   ensureFileExists(filename);
   const bundledCode = await fs.readFile(filename, "utf-8");
@@ -24,15 +28,25 @@ export async function unminify(
   await fs.writeFile(graphPath, JSON.stringify(graph, null, 2));
   console.log(`[Graph] Dependency map saved to ${graphPath}`);
 
-  for (let i = 0; i < extractedFiles.length; i++) {
-    console.log(`Processing file ${i + 1}/${extractedFiles.length}`);
+  const totalFiles = extractedFiles.length;
+  const effectiveConcurrency = Math.max(1, Math.min(fileConcurrency, totalFiles));
 
-    const file = extractedFiles[i];
+  if (totalFiles > 1) {
+    console.log(
+      `Processing ${totalFiles} files with concurrency ${effectiveConcurrency}...`
+    );
+  }
+
+  const limit = pLimit(effectiveConcurrency);
+
+  async function processFile(file: { path: string }, index: number) {
+    console.log(`Processing file ${index + 1}/${totalFiles}`);
+
     let code = await fs.readFile(file.path, "utf-8");
 
     if (code.trim().length === 0) {
       verbose.log(`Skipping empty file ${file.path}`);
-      continue;
+      return;
     }
 
     // Pre-processing: run sanitizer before the LLM plugin chain
@@ -51,6 +65,10 @@ export async function unminify(
 
     await fs.writeFile(file.path, formattedCode);
   }
+
+  await Promise.all(
+    extractedFiles.map((file, i) => limit(() => processFile(file, i)))
+  );
 
   // Build Semantic Call Graph (Phase 5)
   console.log('[Phase 5] Building Call Graph...');
