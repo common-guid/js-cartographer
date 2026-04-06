@@ -29,6 +29,7 @@ export const openai = cli()
     "The context size to use for the LLM",
     `${DEFAULT_CONTEXT_WINDOW_SIZE}`
   )
+  .option("--rename-all", "Send all identifiers to the LLM (skip smart filtering)")
   .option("--no-sanitizer", "Disable the Wakaru syntax cleanup step")
   .option(
     "--no-heuristic-naming",
@@ -56,7 +57,8 @@ export const openai = cli()
           apiKey,
           baseURL,
           model: opts.model,
-          contextWindowSize
+          contextWindowSize,
+          renameAll: opts.renameAll ?? false
         }),
         prettier
       ],

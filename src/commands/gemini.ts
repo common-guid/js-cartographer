@@ -24,6 +24,7 @@ export const azure = cli()
     "The Google Gemini/AIStudio API key. Alternatively use GEMINI_API_KEY environment variable"
   )
   .option("--verbose", "Show verbose output")
+  .option("--rename-all", "Send all identifiers to the LLM (skip smart filtering)")
   .option("--no-sanitizer", "Disable the Wakaru syntax cleanup step")
   .option(
     "--no-heuristic-naming",
@@ -46,7 +47,12 @@ export const azure = cli()
       opts.outputDir,
       [
         babel,
-        geminiRename({ apiKey, model: opts.model, contextWindowSize }),
+        geminiRename({
+          apiKey,
+          model: opts.model,
+          contextWindowSize,
+          renameAll: opts.renameAll ?? false
+        }),
         prettier
       ],
       sanitizer

@@ -10,11 +10,13 @@ import {
 export function geminiRename({
   apiKey,
   model: modelName,
-  contextWindowSize
+  contextWindowSize,
+  renameAll = false
 }: {
   apiKey: string;
   model: string;
   contextWindowSize: number;
+  renameAll?: boolean;
 }) {
   const client = new GoogleGenerativeAI(apiKey);
 
@@ -38,7 +40,8 @@ export function geminiRename({
         return renamed;
       },
       contextWindowSize,
-      showPercentage
+      showPercentage,
+      renameAll
     );
   };
 }

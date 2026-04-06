@@ -27,6 +27,7 @@ export const local = cli()
     "The context size to use for the LLM",
     `${DEFAULT_CONTEXT_WINDOW_SIZE}`
   )
+  .option("--rename-all", "Send all identifiers to the LLM (skip smart filtering)")
   .option("--no-sanitizer", "Disable the Wakaru syntax cleanup step")
   .option(
     "--no-heuristic-naming",
@@ -53,7 +54,7 @@ export const local = cli()
     await unminify(
       filename,
       opts.outputDir,
-      [babel, localReanme(prompt, contextWindowSize), prettier],
+      [babel, localReanme(prompt, contextWindowSize, opts.renameAll ?? false), prettier],
       sanitizer
     );
   });

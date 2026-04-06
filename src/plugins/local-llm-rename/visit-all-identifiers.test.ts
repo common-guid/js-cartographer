@@ -97,7 +97,7 @@ class _Foo {
   bar() {}
 }`.trim();
   assert.equal(
-    await visitAllIdentifiers(code, async (name) => "_" + name, 200),
+    await visitAllIdentifiers(code, async (name) => "_" + name, 200, undefined, true),
     expected
   );
 });
@@ -124,7 +124,9 @@ function foo() {
       varnameScopeTuples.push([name, scope]);
       return name + "_changed";
     },
-    200
+    200,
+    undefined,
+    true
   );
   assert.deepEqual(varnameScopeTuples, [
     [
@@ -161,7 +163,9 @@ function foo() {
       names.push(name);
       return name;
     },
-    200
+    200,
+    undefined,
+    true
   );
   assert.deepEqual(names, ["foo", "bar", "baz", "qux"]);
 });
@@ -289,7 +293,7 @@ test("should handle multiple properties with the same name", async () => {
 const foo = 1;
 const bar = 2;
 `.trim();
-  const result = await visitAllIdentifiers(code, async () => "bar", 200);
+  const result = await visitAllIdentifiers(code, async () => "bar", 200, undefined, true);
   assert.equal(
     result,
     `
@@ -305,7 +309,7 @@ function foo() {
   arguments = '??';
 }
 `.trim();
-  const result = await visitAllIdentifiers(code, async () => "foobar", 200);
+  const result = await visitAllIdentifiers(code, async () => "foobar", 200, undefined, true);
   assert.equal(
     result,
     `
@@ -314,4 +318,82 @@ function foobar() {
 }
     `.trim()
   );
+});
+
+// =========================================================================
+// Identifier filtering integration tests
+// =========================================================================
+
+test("skips descriptive identifiers by default (filtering enabled)", async () => {
+  const code = `
+const fetchUserData = 1;
+const a = 2;
+`.trim();
+  const renamed: string[] = [];
+  await visitAllIdentifiers(
+    code,
+    async (name) => {
+      renamed.push(name);
+      return name + "_changed";
+    },
+    200
+  );
+  // 'fetchUserData' is descriptive (long camelCase) → should be skipped
+  // 'a' is single-char → should be renamed
+  assert.deepEqual(renamed, ["a"]);
+});
+
+test("renameAll=true bypasses the filter", async () => {
+  const code = `
+const fetchUserData = 1;
+const a = 2;
+`.trim();
+  const renamed: string[] = [];
+  await visitAllIdentifiers(
+    code,
+    async (name) => {
+      renamed.push(name);
+      return name + "_changed";
+    },
+    200,
+    undefined,
+    true // renameAll
+  );
+  // Both identifiers should be sent to the visitor
+  assert.deepEqual(renamed, ["fetchUserData", "a"]);
+});
+
+test("skips webpack internals when filtering is on", async () => {
+  const code = `
+var __webpack_require__ = 1;
+var x = 2;
+`.trim();
+  const renamed: string[] = [];
+  await visitAllIdentifiers(
+    code,
+    async (name) => {
+      renamed.push(name);
+      return name + "_changed";
+    },
+    200
+  );
+  assert.deepEqual(renamed, ["x"]);
+});
+
+test("renames hex-obfuscated names even with filtering on", async () => {
+  const code = `
+var _0x3a2f = 1;
+var data = 2;
+`.trim();
+  const renamed: string[] = [];
+  await visitAllIdentifiers(
+    code,
+    async (name) => {
+      renamed.push(name);
+      return "renamed_" + name;
+    },
+    200
+  );
+  // _0x3a2f should be renamed, 'data' should be skipped (descriptive)
+  assert.deepEqual(renamed, ["_0x3a2f"]);
 });

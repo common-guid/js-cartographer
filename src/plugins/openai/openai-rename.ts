@@ -7,12 +7,14 @@ export function openaiRename({
   apiKey,
   baseURL,
   model,
-  contextWindowSize
+  contextWindowSize,
+  renameAll = false
 }: {
   apiKey: string;
   baseURL: string;
   model: string;
   contextWindowSize: number;
+  renameAll?: boolean;
 }) {
   const client = new OpenAI({ apiKey, baseURL });
 
@@ -37,7 +39,8 @@ export function openaiRename({
         return renamed;
       },
       contextWindowSize,
-      showPercentage
+      showPercentage,
+      renameAll
     );
   };
 }

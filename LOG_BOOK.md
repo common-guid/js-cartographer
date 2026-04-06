@@ -17,3 +17,6 @@ Implemented `CallGraphBuilder` service that uses `@babel/parser` and `@babel/tra
 
 ## Phase 6: CLI Experience & Visualization | 2024-10-26
 Implemented `GraphPresenter` to generate depth-limited ASCII trees and Mermaid charts from the `call-graph.json` data. Exposed the functionality via the new `humanify graph` sub-command. Added comprehensive unit and E2E tests, and updated the README documentation.
+
+## Performance: Intelligent Identifier Filtering | 2026-04-06
+Added a pre-filter (`src/plugins/local-llm-rename/identifier-filter.ts`) that skips already-meaningful identifiers before sending them to the LLM, reducing unnecessary API calls by an estimated 40–60%. The filter uses three layers: static skip-lists (JS builtins, Node globals, webpack internals, reserved words), obfuscation-pattern detection (single-char and `_0x` hex names), and heuristic rules (vowel presence, camelCase length). A `--rename-all` CLI flag on all 4 commands restores the original send-everything behaviour. Added 12 unit tests for the filter and 4 integration tests for `visitAllIdentifiers` — all 72 tests pass.
