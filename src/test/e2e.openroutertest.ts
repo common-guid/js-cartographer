@@ -30,8 +30,10 @@ test("Unminifies an example file successfully with openrouter", async () => {
   // We can't really run this test without an API key, so we check for the environment variable
   // and skip if it's not present.
   if (!process.env.OPENROUTER_API_KEY) {
-      console.log("Skipping OpenRouter E2E test because OPENROUTER_API_KEY is not set.");
-      return;
+    console.log(
+      "Skipping OpenRouter E2E test because OPENROUTER_API_KEY is not set."
+    );
+    return;
   }
 
   await expectStartsWith(

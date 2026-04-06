@@ -1,26 +1,44 @@
 import fs from "fs/promises";
+import path from "node:path";
 import { ensureFileExists } from "./file-utils.js";
 import { webcrack } from "./plugins/webcrack.js";
 import { verbose } from "./verbose.js";
+import type { WakaruSanitizer } from "./services/sanitizer/index.js";
+import { GraphBuilder } from "./services/graph/index.js";
+import { CallGraphBuilder } from "./services/callgraph/index.js";
 
 export async function unminify(
   filename: string,
   outputDir: string,
-  plugins: ((code: string) => Promise<string>)[] = []
+  plugins: ((code: string) => Promise<string>)[] = [],
+  sanitizer?: WakaruSanitizer
 ) {
   ensureFileExists(filename);
   const bundledCode = await fs.readFile(filename, "utf-8");
   const extractedFiles = await webcrack(bundledCode, outputDir);
 
+  // Build Module Graph (Phase 4)
+  const graphBuilder = new GraphBuilder();
+  const graph = await graphBuilder.build(outputDir);
+  const graphPath = path.join(outputDir, 'module-graph.json');
+  await fs.writeFile(graphPath, JSON.stringify(graph, null, 2));
+  console.log(`[Graph] Dependency map saved to ${graphPath}`);
+
   for (let i = 0; i < extractedFiles.length; i++) {
     console.log(`Processing file ${i + 1}/${extractedFiles.length}`);
 
     const file = extractedFiles[i];
-    const code = await fs.readFile(file.path, "utf-8");
+    let code = await fs.readFile(file.path, "utf-8");
 
     if (code.trim().length === 0) {
       verbose.log(`Skipping empty file ${file.path}`);
       continue;
+    }
+
+    // Pre-processing: run sanitizer before the LLM plugin chain
+    if (sanitizer) {
+      const sanitized = await sanitizer.transform(code, file.path);
+      code = sanitized.code;
     }
 
     const formattedCode = await plugins.reduce(
@@ -33,6 +51,15 @@ export async function unminify(
 
     await fs.writeFile(file.path, formattedCode);
   }
+
+  // Build Semantic Call Graph (Phase 5)
+  console.log('[Phase 5] Building Call Graph...');
+  const callGraphBuilder = new CallGraphBuilder();
+  const callGraph = await callGraphBuilder.build(outputDir);
+
+  const callGraphPath = path.join(outputDir, 'call-graph.json');
+  await fs.writeFile(callGraphPath, JSON.stringify(callGraph, null, 2));
+  console.log(`[CallGraph] Graph data saved to ${callGraphPath}`);
 
   console.log(`Done! You can find your unminified code in ${outputDir}`);
 }
