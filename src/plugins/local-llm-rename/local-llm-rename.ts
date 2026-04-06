@@ -6,7 +6,11 @@ import { visitAllIdentifiers } from "./visit-all-identifiers.js";
 
 const PADDING_CHARS = 200;
 
-export const localReanme = (prompt: Prompt, contextWindowSize: number) => {
+export const localReanme = (
+  prompt: Prompt,
+  contextWindowSize: number,
+  renameAll: boolean = false
+) => {
   return async (code: string): Promise<string> => {
     const filename = await defineFilename(
       prompt,
@@ -18,7 +22,8 @@ export const localReanme = (prompt: Prompt, contextWindowSize: number) => {
       (name, surroundingCode) =>
         unminifyVariableName(prompt, name, filename, surroundingCode),
       contextWindowSize,
-      showPercentage
+      showPercentage,
+      renameAll
     );
   };
 };

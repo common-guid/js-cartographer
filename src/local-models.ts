@@ -9,7 +9,7 @@ import { ChatWrapper, Llama3_1ChatWrapper } from "node-llama-cpp";
 import { downloadFile } from "ipull";
 import { verbose } from "./verbose.js";
 
-const MODEL_DIRECTORY = join(homedir(), ".humanifyjs", "models");
+const MODEL_DIRECTORY = join(homedir(), ".cartographer", "models");
 
 type ModelDefinition = { url: URL; wrapper?: ChatWrapper };
 
@@ -76,7 +76,7 @@ export function getEnsuredModelPath(model: string) {
   const path = getModelPath(model);
   if (!existsSync(path)) {
     err(
-      `Model "${model}" not found. Run "humanify download ${model}" to download the model.`
+      `Model "${model}" not found. Run "cartographer download ${model}" to download the model.`
     );
   }
   return path;

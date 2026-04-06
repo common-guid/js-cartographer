@@ -1,0 +1,9 @@
+{
+  "files": {
+    "deobfuscated.js": {
+      "id": "deobfuscated.js",
+      "imports": [],
+      "exports": []
+    }
+  }
+}

@@ -1,6 +1,7 @@
 import { visitAllIdentifiers } from "./local-llm-rename/visit-all-identifiers.js";
 import { verbose } from "../verbose.js";
 import { showPercentage } from "../progress.js";
+import { withRetry } from "../concurrency.js";
 import {
   GoogleGenerativeAI,
   ModelParams,
@@ -10,11 +11,13 @@ import {
 export function geminiRename({
   apiKey,
   model: modelName,
-  contextWindowSize
+  contextWindowSize,
+  renameAll = false
 }: {
   apiKey: string;
   model: string;
   contextWindowSize: number;
+  renameAll?: boolean;
 }) {
   const client = new GoogleGenerativeAI(apiKey);
 
@@ -25,20 +28,21 @@ export function geminiRename({
         verbose.log(`Renaming ${name}`);
         verbose.log("Context: ", surroundingCode);
 
-        const model = client.getGenerativeModel(
-          toRenameParams(name, modelName)
-        );
-
-        const result = await model.generateContent(surroundingCode);
-
-        const renamed = JSON.parse(result.response.text()).newName;
+        const renamed = await withRetry(async () => {
+          const model = client.getGenerativeModel(
+            toRenameParams(name, modelName)
+          );
+          const result = await model.generateContent(surroundingCode);
+          return JSON.parse(result.response.text()).newName;
+        });
 
         verbose.log(`Renamed to ${renamed}`);
 
         return renamed;
       },
       contextWindowSize,
-      showPercentage
+      showPercentage,
+      renameAll
     );
   };
 }

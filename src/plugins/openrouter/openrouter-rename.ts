@@ -2,24 +2,27 @@ import OpenAI from "openai";
 import { visitAllIdentifiers } from "../local-llm-rename/visit-all-identifiers.js";
 import { showPercentage } from "../../progress.js";
 import { verbose } from "../../verbose.js";
+import { withRetry } from "../../concurrency.js";
 
 export function openrouterRename({
   apiKey,
   baseURL,
   model,
-  contextWindowSize
+  contextWindowSize,
+  renameAll = false
 }: {
   apiKey: string;
   baseURL: string;
   model: string;
   contextWindowSize: number;
+  renameAll?: boolean;
 }) {
   const client = new OpenAI({
     apiKey,
     baseURL,
     defaultHeaders: {
-      "HTTP-Referer": "https://github.com/zip-program/humanify",
-      "X-Title": "Humanify"
+      "HTTP-Referer": "https://github.com/zip-program/js-cartographer",
+      "X-Title": "JS Cartographer"
     }
   });
 
@@ -30,21 +33,24 @@ export function openrouterRename({
         verbose.log(`Renaming ${name}`);
         verbose.log("Context: ", surroundingCode);
 
-        const response = await client.chat.completions.create(
-          toRenamePrompt(name, surroundingCode, model)
-        );
-        const result = response.choices[0].message?.content;
-        if (!result) {
-          throw new Error("Failed to rename", { cause: response });
-        }
-        const renamed = JSON.parse(result).newName;
+        const renamed = await withRetry(async () => {
+          const response = await client.chat.completions.create(
+            toRenamePrompt(name, surroundingCode, model)
+          );
+          const result = response.choices[0].message?.content;
+          if (!result) {
+            throw new Error("Failed to rename", { cause: response });
+          }
+          return JSON.parse(result).newName;
+        });
 
         verbose.log(`Renamed to ${renamed}`);
 
         return renamed;
       },
       contextWindowSize,
-      showPercentage
+      showPercentage,
+      renameAll
     );
   };
 }

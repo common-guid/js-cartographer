@@ -1,6 +1,7 @@
 import { parseAsync, transformFromAstAsync, NodePath } from "@babel/core";
 import * as babelTraverse from "@babel/traverse";
 import { Identifier, toIdentifier, Node } from "@babel/types";
+import { shouldRename } from "./identifier-filter.js";
 
 const traverse: typeof babelTraverse.default.default = (
   typeof babelTraverse.default === "function"
@@ -14,7 +15,8 @@ export async function visitAllIdentifiers(
   code: string,
   visitor: Visitor,
   contextWindowSize: number,
-  onProgress?: (percentageDone: number) => void
+  onProgress?: (percentageDone: number) => void,
+  renameAll: boolean = false
 ) {
   const ast = await parseAsync(code, { sourceType: "unambiguous" });
   const renames = new Set<string>();
@@ -33,6 +35,12 @@ export async function visitAllIdentifiers(
     const smallestScopeNode = smallestScope.node;
     if (smallestScopeNode.type !== "Identifier") {
       throw new Error("No identifiers found");
+    }
+
+    if (!renameAll && !shouldRename(smallestScopeNode.name)) {
+      markVisited(smallestScope, smallestScopeNode.name, visited);
+      onProgress?.(visited.size / numRenamesExpected);
+      continue;
     }
 
     const surroundingCode = await scopeToString(

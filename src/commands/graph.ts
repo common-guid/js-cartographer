@@ -21,7 +21,7 @@ export const graph = cli()
         rawData = await fs.readFile(graphPath, 'utf-8');
       } catch (e) {
         console.error(`❌ Error: Could not find ${graphPath}.`);
-        console.error(`Did you run 'humanify ${directory}' first to generate the graph?`);
+        console.error(`Did you run 'cartographer ${directory}' first to generate the graph?`);
         process.exit(1);
       }
 

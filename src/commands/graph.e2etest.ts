@@ -3,10 +3,10 @@ import assert from 'node:assert';
 import { mkdtemp, rm, writeFile, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { humanify } from '../test-utils.js';
+import { cartographer } from '../test-utils.js';
 import { CallGraphData } from '../services/callgraph/types.js';
 
-test('humanify graph --entry X outputs ASCII tree', async () => {
+test('cartographer graph --entry X outputs ASCII tree', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'graph-e2e-'));
   try {
     const data: CallGraphData = {
@@ -20,7 +20,7 @@ test('humanify graph --entry X outputs ASCII tree', async () => {
     };
     await writeFile(join(dir, 'call-graph.json'), JSON.stringify(data));
 
-    const result = await humanify('graph', dir, '--entry', 'src/main.js:init');
+    const result = await cartographer('graph', dir, '--entry', 'src/main.js:init');
     assert.match(result.stdout, /src\/main\.js:init/);
     assert.match(result.stdout, /└── src\/utils\.js:helper/);
   } finally {
@@ -28,7 +28,7 @@ test('humanify graph --entry X outputs ASCII tree', async () => {
   }
 });
 
-test('humanify graph --format mermaid writes call-graph.mermaid', async () => {
+test('cartographer graph --format mermaid writes call-graph.mermaid', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'graph-e2e-'));
   try {
     const data: CallGraphData = {
@@ -39,7 +39,7 @@ test('humanify graph --format mermaid writes call-graph.mermaid', async () => {
     };
     await writeFile(join(dir, 'call-graph.json'), JSON.stringify(data));
 
-    const result = await humanify('graph', dir, '--format', 'mermaid');
+    const result = await cartographer('graph', dir, '--format', 'mermaid');
     assert.match(result.stdout, /Mermaid graph saved/);
 
     const mermaidContent = await readFile(join(dir, 'call-graph.mermaid'), 'utf-8');
