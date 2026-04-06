@@ -464,6 +464,7 @@ npm run test:e2e       # E2E tests (*.e2etest.ts) — requires a build
 npm run test:llm       # Local LLM accuracy tests (*.llmtest.ts)
 npm run test:openai    # OpenAI accuracy tests (costs API credits)
 npm run test:gemini    # Gemini accuracy tests (costs API credits)
+npm run test:quality   # On-demand quality evaluation (Source Map Recovery + Snapshots)
 ```
 
 Test files live **alongside the source they test** inside `src/`. See `testing/TESTING_GUIDE.md` for conventions.
@@ -739,6 +740,7 @@ The analyzed and deobfuscated code will be written to `fixture-analysis/`. Compa
 | `npm run build` | Compile TypeScript to `dist/` via pkgroll |
 | `npm run test:unit` | Run unit tests (23 tests, no LLM/API required) |
 | `npm run test:e2e` | Run end-to-end tests (requires a build) |
+| `npm run test:quality` | Run on-demand quality evaluation (Recovery Score + Snapshots) |
 | `npm run lint` | Run Prettier + ESLint checks |
 
 ## License

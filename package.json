@@ -18,6 +18,7 @@
     "test:llm": "find src -name '*.llmtest.ts' | xargs tsx --test --test-concurrency=1",
     "test:openai": "npm run build && find src -name '*.openaitest.ts' | xargs tsx --test",
     "test:gemini": "npm run build && find src -name '*.geminitest.ts' | xargs tsx --test",
+    "test:quality": "tsx testing/quality/runner.ts",
     "lint": "npm run lint:prettier && npm run lint:eslint",
     "lint:prettier": "prettier --check src/* src/**/*",
     "lint:eslint": "eslint src/* src/**/*",
@@ -70,11 +71,15 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.8.0",
+    "@inquirer/prompts": "^8.3.2",
+    "@types/diff": "^7.0.2",
     "@types/node": "^22.0.0",
+    "diff": "^8.0.4",
     "eslint": "^9.8.0",
     "eslint-plugin-unused-imports": "^4.1.2",
     "globals": "^16.0.0",
     "pkgroll": "^2.4.2",
+    "source-map": "^0.7.6",
     "typescript-eslint": "^8.0.0"
   }
 }

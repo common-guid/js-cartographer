@@ -23,8 +23,8 @@ module.exports = {
     ],
   },
 
-  // Disable source maps so the bundle is a pure ground truth for the deobfuscator
-  devtool: false,
+  // Enable source maps if the environment variable is set
+  devtool: process.env.GENERATE_SOURCEMAP === 'true' ? 'source-map' : false,
 
   // Target ES5 via browserslist (reinforced by .babelrc)
   target: ['web', 'es5'],
