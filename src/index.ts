@@ -9,7 +9,7 @@ import { openrouter } from "./commands/openrouter.js";
 import { graph } from "./commands/graph.js";
 
 cli()
-  .name("humanify")
+  .name("cartographer")
   .description("Unminify code using OpenAI's API or a local LLM")
   .version(version)
   .addCommand(local)

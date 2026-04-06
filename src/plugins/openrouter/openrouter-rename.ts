@@ -20,8 +20,8 @@ export function openrouterRename({
     apiKey,
     baseURL,
     defaultHeaders: {
-      "HTTP-Referer": "https://github.com/zip-program/humanify",
-      "X-Title": "Humanify"
+      "HTTP-Referer": "https://github.com/zip-program/js-cartographer",
+      "X-Title": "JS Cartographer"
     }
   });
 

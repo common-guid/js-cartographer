@@ -169,14 +169,14 @@ verify behavior that can only be confirmed by running the full pipeline end-to-e
 **Prerequisites:** The binary must be built before running e2e tests. `npm run test:e2e`
 runs `npm run build` automatically before executing test files.
 
-### The `humanify()` test utility
+### The `cartographer()` test utility
 
-Use the `humanify()` helper from `src/test-utils.ts` to spawn the CLI:
+Use the `cartographer()` helper from `src/test-utils.ts` to spawn the CLI:
 
 ```typescript
-import { humanify } from '../../test-utils.js';
+import { cartographer } from '../../test-utils.js';
 
-const { stdout, stderr } = await humanify('openai', 'input.js', '-o', 'output/');
+const { stdout, stderr } = await cartographer('openai', 'input.js', '-o', 'output/');
 ```
 
 The helper:
@@ -191,12 +191,12 @@ The helper:
 // src/cli.e2etest.ts
 import test from 'node:test';
 import assert from 'node:assert';
-import { humanify } from './test-utils.js';
+import { cartographer } from './test-utils.js';
 
 test('sanitizer flag is accepted without error', async () => {
   // Only tests the CLI flag is wired correctly — does not need a real LLM
   await assert.rejects(
-    humanify('openai', 'nonexistent.js', '--no-sanitizer'),
+    cartographer('openai', 'nonexistent.js', '--no-sanitizer'),
     /nonexistent/
   );
 });
@@ -222,7 +222,7 @@ downloaded GGUF model and are intentionally non-deterministic — they use fuzzy
 
 **Prerequisites:**
 ```bash
-npx humanify download 2b
+npx cartographer download 2b
 # or set MODEL env var to point to a custom model path
 ```
 
@@ -427,7 +427,7 @@ When JS Cartographer runs on `bundle.js`, an ideal run would recover these names
 // src/services/sanitizer/sanitizer-fixture.e2etest.ts
 import test from 'node:test';
 import assert from 'node:assert';
-import { humanify } from '../../test-utils.js';
+import { cartographer } from '../../test-utils.js';
 
 const BUNDLE = 'fixtures/webpack-hello-world/dist/bundle.js';
 
@@ -435,7 +435,7 @@ test('pipeline processes webpack-hello-world bundle without crashing', async () 
   // Does not use a real LLM — just verifies no exception is thrown
   // by passing --no-sanitizer to isolate the test to wiring only
   await assert.rejects(
-    humanify('openai', BUNDLE, '--no-sanitizer'),
+    cartographer('openai', BUNDLE, '--no-sanitizer'),
     /OPENAI_API_KEY/   // expected failure: no key set, but the sanitizer flag was accepted
   );
 });
@@ -555,10 +555,10 @@ const EXPECTED_EXTERNAL_EDGES = [
 
 ```bash
 # After running the full pipeline on the bundle:
-npx humanify openai fixtures/webpack-hello-world/dist/bundle.js -o /tmp/carto-out
+npx cartographer openai fixtures/webpack-hello-world/dist/bundle.js -o /tmp/carto-out
 
 # Verify ASCII tree output:
-npx humanify graph /tmp/carto-out --entry "app.js:initApp"
+npx cartographer graph /tmp/carto-out --entry "app.js:initApp"
 
 # Expected (approximate — names depend on LLM quality):
 # app.js:initApp
@@ -568,7 +568,7 @@ npx humanify graph /tmp/carto-out --entry "app.js:initApp"
 # └── api.js:processUserData
 
 # Verify Mermaid export:
-npx humanify graph /tmp/carto-out --format mermaid
+npx cartographer graph /tmp/carto-out --format mermaid
 cat /tmp/carto-out/call-graph.mermaid
 ```
 
@@ -608,7 +608,7 @@ assertMatches('fetchUserById', ['fetchUser', 'getUser', 'loadUser']); // ✓ pas
 assertMatches('x', ['fetchUser', 'getUser']);                         // ✗ throws
 ```
 
-### `humanify(...argv: string[]): Promise<{ stdout: string; stderr: string }>`
+### `cartographer(...argv: string[]): Promise<{ stdout: string; stderr: string }>`
 
 Spawns the compiled CLI binary with the given arguments. Rejects if the process exits with
 a non-zero code. Used only in `.e2etest.ts` files.
@@ -664,7 +664,7 @@ This table summarizes the minimum required tests for each implementation phase:
 | Test file | Type | Key assertions |
 |---|---|---|
 | `src/services/callgraph/presenter.test.ts` | unit | ASCII tree connectors; depth limit; cycle detection; Mermaid header |
-| `src/commands/graph.e2etest.ts` | e2e | `humanify graph --entry X` exits 0 and prints tree; `--format mermaid` writes a file |
+| `src/commands/graph.e2etest.ts` | e2e | `cartographer graph --entry X` exits 0 and prints tree; `--format mermaid` writes a file |
 
 ---
 

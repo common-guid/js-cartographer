@@ -2,7 +2,7 @@
 ## Project Objective
 Integrate Wakaru's static analysis and syntax restoration into the Humanify CLI pipeline to reduce LLM token costs, improve naming accuracy, and generate a semantic call graph across the unbundled codebase.
 ## Current State
-The codebase (`humanifyjs` v2.2.2) is a TypeScript CLI tool with the following pipeline:
+The codebase (`cartographerjs` v2.2.2) is a TypeScript CLI tool with the following pipeline:
 1. `webcrack` — unbundles/unpacks the minified JS into individual files
 2. `babel` plugin — AST transforms (void→undefined, Yoda flips, scientific notation expansion)
 3. LLM renamer (openai / gemini / local) — renames identifiers via `visitAllIdentifiers()` in `src/plugins/local-llm-rename/visit-all-identifiers.ts`
@@ -10,7 +10,7 @@ The codebase (`humanifyjs` v2.2.2) is a TypeScript CLI tool with the following p
 Key files:
 * `src/unminify.ts` — core pipeline, accepts array of `(code: string) => Promise<string>` plugins
 * `src/commands/openai.ts` (and gemini, openrouter, local) — CLI command definitions using `commander`
-* `src/index.ts` — registers all commands; exposes `humanify` binary
+* `src/index.ts` — registers all commands; exposes `cartographer` binary
 * `src/babel-utils.ts` — `transformWithPlugins()` wrapping `@babel/core`
 * `src/plugins/webcrack.ts` — wraps `webcrack`, returns `File[]` with `.path`
 Neither `@wakaru/unminify` nor `@wakaru/unpacker` are currently installed. No `services/` directory exists yet.
@@ -55,13 +55,13 @@ Neither `@wakaru/unminify` nor `@wakaru/unpacker` are currently installed. No `s
 * **Validation:** Test project `main.js:fnA` calls imported `lib.js:fnB`; `call-graph.json` contains both nodes and the correct edge with `type: 'external'`
 * **Phase Plan:** .specs/phase-5.md
 ## Phase 6: CLI Experience & Visualization
-**Goal:** Expose the call graph to users via a `humanify graph` sub-command with ASCII tree and Mermaid export.
+**Goal:** Expose the call graph to users via a `cartographer graph` sub-command with ASCII tree and Mermaid export.
 * Create `src/services/callgraph/presenter.ts` with `GraphPresenter` class implementing:
     * `toAsciiTree(entryId, maxDepth)` — depth-limited ASCII tree with cycle detection using `├──`/`└──` connectors
     * `toMermaid(entryId?, maxDepth)` — Mermaid `graph TD` flowchart string
 * Create `src/commands/graph.ts` as a new Commander command (`graph <directory>`) with options `--entry`, `--depth`, `--format` (tree|mermaid); reads `call-graph.json` from the directory, routes to the appropriate presenter output
 * Register the `graph` command in `src/index.ts`
-* Update `README_humanify-plus.md` documenting the new `--no-sanitizer`, `--no-heuristic-naming`, and `graph` sub-command
+* Update `README_cartographer-plus.md` documenting the new `--no-sanitizer`, `--no-heuristic-naming`, and `graph` sub-command
 * **Validation:** ASCII tree output matches expected tree structure for a test project; `--depth 1` correctly limits traversal; Mermaid export writes a valid `graph TD` file
 * **Phase Plan:** .specs/phase-6.md
 ## Cross-Cutting Concerns

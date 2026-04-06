@@ -14,7 +14,7 @@
  */
 import test from "node:test";
 import assert from "node:assert";
-import { humanify } from "../../test-utils.js";
+import { cartographer } from "../../test-utils.js";
 
 const NONEXISTENT = "nonexistent-file.js";
 const FIXTURE_BUNDLE = "fixtures/webpack-hello-world/dist/bundle.js";
@@ -25,7 +25,7 @@ const FIXTURE_BUNDLE = "fixtures/webpack-hello-world/dist/bundle.js";
 
 for (const cmd of ["openai", "gemini", "openrouter", "local"]) {
   test(`${cmd}: still rejects on missing file (non-regression)`, async () => {
-    await assert.rejects(humanify(cmd, NONEXISTENT));
+    await assert.rejects(cartographer(cmd, NONEXISTENT));
   });
 }
 
@@ -38,7 +38,7 @@ for (const cmd of ["openai", "gemini", "openrouter"]) {
     // This must reject because the file doesn't exist — NOT because the flag is unrecognised.
     // Commander would exit with "error: unknown option '--no-sanitizer'" if the flag wasn't wired.
     const err = await assert
-      .rejects(humanify(cmd, NONEXISTENT, "--no-sanitizer"))
+      .rejects(cartographer(cmd, NONEXISTENT, "--no-sanitizer"))
       .then(() => null)
       .catch((e) => e as Error);
 
@@ -63,7 +63,7 @@ test("sanitizer logs [Sanitizer] Optimizing when run against fixture bundle", as
   // We capture stderr+stdout and check the log is present.
   let output = "";
   try {
-    const result = await humanify(
+    const result = await cartographer(
       "openrouter",
       FIXTURE_BUNDLE,
       "-k",
@@ -74,7 +74,7 @@ test("sanitizer logs [Sanitizer] Optimizing when run against fixture bundle", as
     output = result.stdout + result.stderr;
   } catch (e) {
     // Expected — the API call will fail with an invalid key.
-    // humanify() rejects on non-zero exit, but we can still check the output.
+    // cartographer() rejects on non-zero exit, but we can still check the output.
     if (e instanceof Error) output = e.message;
   }
 
@@ -87,7 +87,7 @@ test("sanitizer logs [Sanitizer] Optimizing when run against fixture bundle", as
 test("--no-sanitizer suppresses [Sanitizer] Optimizing log against fixture bundle", async () => {
   let output = "";
   try {
-    const result = await humanify(
+    const result = await cartographer(
       "openrouter",
       FIXTURE_BUNDLE,
       "-k",

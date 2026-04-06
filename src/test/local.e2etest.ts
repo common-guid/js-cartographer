@@ -3,7 +3,7 @@ import { readFile, rm } from "node:fs/promises";
 import { testPrompt } from "./test-prompt.js";
 import { gbnf } from "../plugins/local-llm-rename/gbnf.js";
 import assert from "node:assert";
-import { humanify } from "../test-utils.js";
+import { cartographer } from "../test-utils.js";
 
 const TEST_OUTPUT_DIR = "test-output";
 
@@ -32,7 +32,7 @@ test("Unminifies an example file successfully", async () => {
     await fileIsMinified(`fixtures/example.min.js`)
   );
 
-  await humanify(
+  await cartographer(
     "local",
     "fixtures/example.min.js",
     "--verbose",

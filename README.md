@@ -1,4 +1,4 @@
-# JS Cartographer (humanifyjs)
+# JS Cartographer (cartographerjs)
 
 > AI-powered JavaScript deobfuscator and semantic code mapper
 
@@ -78,7 +78,7 @@ LLMs only rename identifiers — they never restructure code. All structural tra
 - **Heuristic naming**: Deterministically renames `void 0` → `undefined`, normalizes DOM/Node.js API usage patterns, and reduces LLM token costs with character-savings metrics
 - **Module dependency graph**: Writes `module-graph.json` mapping all `import`/`require` relationships across the unbundled project
 - **Semantic call graph**: Writes `call-graph.json` indexing every function definition and call edge (internal and cross-file)
-- **Graph visualization**: `humanify graph` sub-command renders the call graph as a depth-limited ASCII tree or Mermaid flowchart
+- **Graph visualization**: `cartographer graph` sub-command renders the call graph as a depth-limited ASCII tree or Mermaid flowchart
 - **Webpack bundle support**: Powered by `webcrack` for automatic bundle extraction
 - **Safety-first pipeline**: Each transformation stage wraps errors independently — a failing Wakaru rule or Prettier pass never aborts the entire run
 
@@ -96,14 +96,14 @@ LLMs only rename identifiers — they never restructure code. All structural tra
 ### Use directly via npx (no install required)
 
 ```shell
-npx humanify openrouter yourfile.min.js
+npx cartographer openrouter yourfile.min.js
 ```
 
 ### Install globally
 
 ```shell
-npm install -g humanifyjs
-humanify openrouter yourfile.min.js
+npm install -g cartographerjs
+cartographer openrouter yourfile.min.js
 ```
 
 ### Clone for development
@@ -122,7 +122,7 @@ npm run build
 ```shell
 # Recommended: OpenRouter (supports many models, free tier available)
 export OPENROUTER_API_KEY=your_key
-npx humanify openrouter bundle.min.js
+npx cartographer openrouter bundle.min.js
 
 # Output is written to ./output/ by default
 ls output/
@@ -141,33 +141,33 @@ ls output/
 
 ```shell
 export OPENROUTER_API_KEY=your_key
-npx humanify openrouter bundle.min.js
+npx cartographer openrouter bundle.min.js
 
 # Use a specific model
-npx humanify openrouter bundle.min.js -m anthropic/claude-3.5-sonnet
+npx cartographer openrouter bundle.min.js -m anthropic/claude-3.5-sonnet
 ```
 
 #### OpenAI
 
 ```shell
 export OPENAI_API_KEY=your_key
-npx humanify openai bundle.min.js
+npx cartographer openai bundle.min.js
 
 # Default model: gpt-4o-mini
-npx humanify openai bundle.min.js -m gpt-4o
+npx cartographer openai bundle.min.js -m gpt-4o
 ```
 
 #### Google Gemini
 
 ```shell
 export GEMINI_API_KEY=your_key
-npx humanify gemini bundle.min.js
+npx cartographer gemini bundle.min.js
 ```
 
 #### Azure / Self-hosted OpenAI proxy
 
 ```shell
-npx humanify openai bundle.min.js \
+npx cartographer openai bundle.min.js \
   --apiKey your_key \
   --baseURL https://your-azure-endpoint.openai.azure.com/v1
 ```
@@ -182,13 +182,13 @@ Local mode uses a quantized GGUF model running via `node-llama-cpp`. No API key 
 
 ```shell
 # Download the 2B model (~2.4 GB, fast, suitable for most hardware)
-npx humanify download 2b
+npx cartographer download 2b
 
 # Download the 8B model (~4.9 GB, higher quality, requires more RAM/VRAM)
-npx humanify download 8b
+npx cartographer download 8b
 ```
 
-Models are stored in `~/.humanifyjs/models/`.
+Models are stored in `~/.cartographerjs/models/`.
 
 | Model key | Model | Size |
 |-----------|-------|------|
@@ -198,13 +198,13 @@ Models are stored in `~/.humanifyjs/models/`.
 **Step 2 — Run**:
 
 ```shell
-npx humanify local bundle.min.js
+npx cartographer local bundle.min.js
 
 # Use the 8B model explicitly
-npx humanify local bundle.min.js -m 8b
+npx cartographer local bundle.min.js -m 8b
 
 # Disable GPU acceleration (e.g. for CI)
-npx humanify local bundle.min.js --disableGpu
+npx cartographer local bundle.min.js --disableGpu
 ```
 
 Apple M-series chips are natively supported via Metal acceleration.
@@ -241,13 +241,13 @@ After any deobfuscation run, the output directory contains `call-graph.json`. Us
 
 ```shell
 # ASCII tree rooted at a specific function (--entry is required for tree format)
-humanify graph ./output --entry "src/app.js:initApp"
+cartographer graph ./output --entry "src/app.js:initApp"
 
 # Limit traversal depth
-humanify graph ./output --entry "src/app.js:initApp" --depth 3
+cartographer graph ./output --entry "src/app.js:initApp" --depth 3
 
 # Export the full graph as a Mermaid flowchart
-humanify graph ./output --format mermaid
+cartographer graph ./output --format mermaid
 # Writes: ./output/call-graph.mermaid
 ```
 
@@ -269,7 +269,7 @@ The Mermaid output can be pasted directly into any Mermaid-compatible renderer (
 ### All CLI Options
 
 ```
-humanify <command> [options] <input>
+cartographer <command> [options] <input>
 
 Commands:
   local       Use a local GGUF model to unminify code
@@ -369,12 +369,12 @@ js-cartographer/
 │   ├── url.ts                       # Template literal URL helper
 │   │
 │   ├── commands/
-│   │   ├── openai.ts                # `humanify openai` command
-│   │   ├── gemini.ts                # `humanify gemini` command
-│   │   ├── openrouter.ts            # `humanify openrouter` command
-│   │   ├── local.ts                 # `humanify local` command
-│   │   ├── download.ts              # `humanify download` command
-│   │   ├── graph.ts                 # `humanify graph` command
+│   │   ├── openai.ts                # `cartographer openai` command
+│   │   ├── gemini.ts                # `cartographer gemini` command
+│   │   ├── openrouter.ts            # `cartographer openrouter` command
+│   │   ├── local.ts                 # `cartographer local` command
+│   │   ├── download.ts              # `cartographer download` command
+│   │   ├── graph.ts                 # `cartographer graph` command
 │   │   └── default-args.ts          # Shared default CLI argument values
 │   │
 │   ├── plugins/
@@ -503,11 +503,11 @@ cp .env.example .env
 
 | Variable | Used by | Description |
 |----------|---------|-------------|
-| `OPENAI_API_KEY` | `humanify openai` | OpenAI secret key |
-| `OPENAI_BASE_URL` | `humanify openai` | Override for Azure or local proxy |
-| `GEMINI_API_KEY` | `humanify gemini` | Google AI Studio key |
-| `OPENROUTER_API_KEY` | `humanify openrouter` | OpenRouter key |
-| `OPENROUTER_BASE_URL` | `humanify openrouter` | Override OpenRouter base URL |
+| `OPENAI_API_KEY` | `cartographer openai` | OpenAI secret key |
+| `OPENAI_BASE_URL` | `cartographer openai` | Override for Azure or local proxy |
+| `GEMINI_API_KEY` | `cartographer gemini` | Google AI Studio key |
+| `OPENROUTER_API_KEY` | `cartographer openrouter` | OpenRouter key |
+| `OPENROUTER_BASE_URL` | `cartographer openrouter` | Override OpenRouter base URL |
 | `MODEL` | local tests | Model key (`2b` or `8b`) used in test runs |
 | `VERBOSE` | all | Set to any value for verbose output in tests |
 
@@ -548,7 +548,7 @@ Expose `STRUCTURAL_RULES` and `HEURISTIC_RULES` through a JSON or YAML config fi
 A VS Code extension that wraps the CLI: right-click any `.min.js` file, select "Deobfuscate with JS Cartographer", choose a provider, and open the recovered files in a new workspace — with the call graph rendered in a dedicated panel.
 
 ### Docker image
-A minimal Docker image (`node:20-alpine` base) that bundles the compiled `dist/` and exposes the `humanify` binary, enabling use in CI pipelines and environments where Node.js is not installed.
+A minimal Docker image (`node:20-alpine` base) that bundles the compiled `dist/` and exposes the `cartographer` binary, enabling use in CI pipelines and environments where Node.js is not installed.
 
 ---
 
@@ -610,7 +610,7 @@ npm start -- <command> [options] <input>
 Or, after building (`npm run build`), use the installed binary:
 
 ```shell
-npx humanify <command> [options] <input>
+npx cartographer <command> [options] <input>
 ```
 
 ### OpenRouter (Recommended)

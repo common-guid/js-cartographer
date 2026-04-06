@@ -12,7 +12,7 @@ to ensure code stays 1-1 equivalent.
 v2 highlights compared to v1:
 * Python not required anymore!
 * A lot of tests, the codebase is actually maintanable now
-* Renewed CLI tool `humanify` installable via npm
+* Renewed CLI tool `cartographer` installable via npm
 
 ### ➡️ Check out the [introduction blog post][blogpost] for in-depth explanation!
 
@@ -57,7 +57,7 @@ echo "$((2 * $(wc -c < yourscript.min.js)))"
 So for reference: a minified `bootstrap.min.js` would cost almost nothing to
 un-minify using generic models on OpenRouter, but could cost around $0.50 using GPT-4.
 
-Using `humanify local` is of course free, but may take more time and is
+Using `cartographer local` is of course free, but may take more time and is
 dependent on your local hardware.
 
 ## Getting started
@@ -81,13 +81,13 @@ The default and recommended way to use Humanify is with [OpenRouter](https://ope
 
 ```shell
 export OPENROUTER_API_KEY=your_key
-npx humanify openrouter file.js
+npx cartographer openrouter file.js
 ```
 
 You can specify a different model using the `-m` flag:
 
 ```shell
-npx humanify openrouter file.js -m anthropic/claude-3.5-sonnet
+npx cartographer openrouter file.js -m anthropic/claude-3.5-sonnet
 ```
 
 #### Local mode
@@ -97,19 +97,19 @@ The local mode uses a pre-trained language model to deobfuscate the code.
 1. Download the model (only needed once):
 
 ```shell
-npx humanify download 2b
+npx cartographer download 2b
 ```
 
 2. Run the tool:
 
 ```shell
-npx humanify local file.js
+npx cartographer local file.js
 ```
 
 You can use the `-m` flag to specify a different model (e.g. `8b`):
 
 ```shell
-npx humanify local file.js -m 8b
+npx cartographer local file.js -m 8b
 ```
 
 Humanify has native support for Apple's M-series chips.
@@ -127,10 +127,10 @@ If Humanify finishes a full unminify run (which outputs to `./output` by default
 
 ```bash
 # Render a depth-limited ASCII tree
-npx humanify graph ./output --entry "src/main.js:initApp" --depth 2
+npx cartographer graph ./output --entry "src/main.js:initApp" --depth 2
 
 # Export the entire graph as a Mermaid chart
-npx humanify graph ./output --format mermaid
+npx cartographer graph ./output --format mermaid
 ```
 
 #### OpenAI
@@ -142,7 +142,7 @@ To use OpenAI's models (like `gpt-4o-mini`):
 
 ```shell
 export OPENAI_API_KEY=your_key
-npx humanify openai file.js
+npx cartographer openai file.js
 ```
 
 #### Google Gemini
@@ -154,7 +154,7 @@ To use Google's Gemini models (like `gemini-1.5-flash`):
 
 ```shell
 export GEMINI_API_KEY=your_key
-npx humanify gemini file.js
+npx cartographer gemini file.js
 ```
 
 ## Features
