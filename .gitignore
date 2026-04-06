@@ -8,3 +8,5 @@ dist.tar.gz
 node_modules/
 
 .idea/
+
+analysis-output/
