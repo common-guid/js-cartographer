@@ -32,37 +32,46 @@ JS Cartographer combines Wakaru's static analysis, AST-level transpilation recov
 
 ## How It Works
 
-JS Cartographer runs a multi-stage pipeline on a minified JS file:
+JS Cartographer runs a staged pipeline on a minified bundle. The core strategy is to combine **Wakaru** (deterministic structural restoration) with **Humanify** (semantic identifier humanization), then emit dependency and call-graph artifacts.
 
 ```
 Input bundle
      │
      ▼
- 1. webcrack          ─── Unbundles Webpack/other bundlers into individual files
+ 1. webcrack              ─── Unbundles webpack/other bundle formats into files
      │
      ▼
- 2. WakaruSanitizer   ─── Static analysis: restores async/await, ES6 classes, JSX,
-     │                    modern syntax idioms, and heuristically renames known APIs
+ 2. WakaruSanitizer       ─── Restores structure (async/await, class, JSX, optional chaining)
+     │                       and applies static heuristic rules (e.g., void 0 → undefined)
      ▼
- 3. Babel transforms  ─── AST-level cleanup (Yoda flip, void→undefined, etc.)
+ 3. Babel transforms      ─── Additional AST normalization/cleanup passes
      │
      ▼
- 4. LLM renamer       ─── Renames remaining obfuscated identifiers via AI
-     │                    (OpenAI / Gemini / OpenRouter / local GGUF model)
+ 4. Humanify filter       ─── Selects identifiers that still look obfuscated
+     │                       (skip globals/descriptive names unless --rename-all)
      ▼
- 5. Prettier          ─── Final consistent formatting
+ 5. Humanify LLM rename   ─── Renames unresolved identifiers via OpenAI/Gemini/
+     │                       OpenRouter/local GGUF with strict JSON output
+     ▼
+ 6. Prettier              ─── Final formatting pass
      │
      ▼
- 6. GraphBuilder      ─── Generates module-graph.json (import/export dependency map)
+ 7. GraphBuilder          ─── Writes module-graph.json (imports/exports per file)
      │
      ▼
- 7. CallGraphBuilder  ─── Generates call-graph.json (semantic function call graph)
+ 8. CallGraphBuilder      ─── Writes call-graph.json (function nodes + call edges)
      │
      ▼
-Output directory: renamed source files + JSON graph artifacts
+Output directory: recovered source files + graph artifacts
 ```
 
-LLMs only rename identifiers — they never restructure code. All structural transformations happen deterministically at the AST level via Babel and Wakaru, ensuring the output is semantically equivalent to the input.
+### Why Humanify + Wakaru together?
+
+- **Wakaru alone** is strong at deterministic syntax recovery and known-pattern renaming, but it does not infer project-specific intent for remaining obfuscated names.
+- **Humanify alone** (LLM renaming without cleanup) sees noisier transpiled code, which increases token cost and reduces naming reliability.
+- **Combined pipeline** gives the LLM cleaner code and a smaller target set of identifiers, so you get better names at lower cost while keeping structural changes deterministic.
+
+LLMs in this pipeline are used for naming, while structural restoration is handled by AST transforms. That separation is what keeps output readable without sacrificing semantic stability.
 
 ---
 
@@ -93,26 +102,26 @@ LLMs only rename identifiers — they never restructure code. All structural tra
 
 ## Installation
 
-### Use directly via npx (no install required)
-
-```shell
-npx cartographer openrouter yourfile.min.js
-```
-
-### Install globally
-
-```shell
-npm install -g cartographerjs
-cartographer openrouter yourfile.min.js
-```
-
-### Clone for development
+JS Cartographer is currently documented for **local repository usage** (no `npx` required).
 
 ```shell
 git clone <repo-url>
 cd js-cartographer
 npm install
 npm run build
+```
+
+Run from source during development:
+
+```shell
+npm start -- --help
+npm start -- openrouter --help
+```
+
+Or run the built binary directly:
+
+```shell
+node dist/index.mjs --help
 ```
 
 ---
@@ -122,7 +131,7 @@ npm run build
 ```shell
 # Recommended: OpenRouter (supports many models, free tier available)
 export OPENROUTER_API_KEY=your_key
-npx cartographer openrouter bundle.min.js
+npm start -- openrouter bundle.min.js
 
 # Output is written to ./output/ by default
 ls output/
@@ -137,91 +146,93 @@ ls output/
 
 #### OpenRouter (Recommended)
 
-[OpenRouter](https://openrouter.ai/) provides access to dozens of models through a single API. The default model is `x-ai/grok-4.1-fast`.
+[OpenRouter](https://openrouter.ai/) provides access to many models through one API. The default model is `x-ai/grok-4.1-fast`.
 
 ```shell
 export OPENROUTER_API_KEY=your_key
-npx cartographer openrouter bundle.min.js
+npm start -- openrouter bundle.min.js
 
 # Use a specific model
-npx cartographer openrouter bundle.min.js -m anthropic/claude-3.5-sonnet
+npm start -- openrouter bundle.min.js -m anthropic/claude-3.5-sonnet
 ```
 
 #### OpenAI
 
 ```shell
 export OPENAI_API_KEY=your_key
-npx cartographer openai bundle.min.js
+npm start -- openai bundle.min.js
 
 # Default model: gpt-4o-mini
-npx cartographer openai bundle.min.js -m gpt-4o
+npm start -- openai bundle.min.js -m gpt-4o
 ```
 
 #### Google Gemini
 
 ```shell
 export GEMINI_API_KEY=your_key
-npx cartographer gemini bundle.min.js
+npm start -- gemini bundle.min.js
 ```
 
 #### Azure / Self-hosted OpenAI proxy
 
 ```shell
-npx cartographer openai bundle.min.js \
+npm start -- openai bundle.min.js \
   --apiKey your_key \
   --baseURL https://your-azure-endpoint.openai.azure.com/v1
 ```
+
 
 ---
 
 ### Local Mode
 
-Local mode uses a quantized GGUF model running via `node-llama-cpp`. No API key or internet connection is required after the one-time model download.
+Local mode uses a quantized GGUF model via `node-llama-cpp`. No API key is required.
 
-**Step 1 — Download a model** (only required once):
+**Step 1 — Download a model** (one-time):
 
 ```shell
-# Download the 2B model (~2.4 GB, fast, suitable for most hardware)
-npx cartographer download 2b
+# Download the 2B model (~2.4 GB, lower memory footprint)
+npm start -- download 2b
 
-# Download the 8B model (~4.9 GB, higher quality, requires more RAM/VRAM)
-npx cartographer download 8b
+# Download the 8B model (~4.9 GB, higher quality, higher memory use)
+npm start -- download 8b
 ```
 
-Models are stored in `~/.cartographerjs/models/`.
+Models are stored in `~/.cartographer/models/`.
 
 | Model key | Model | Size |
 |-----------|-------|------|
 | `2b` | Phi-3.1-mini-4k-instruct Q4_K_M | ~2.4 GB |
 | `8b` | Meta-Llama-3.1-8B-Instruct Q4_K_M | ~4.9 GB |
 
-**Step 2 — Run**:
+**Step 2 — Run deobfuscation**:
 
 ```shell
-npx cartographer local bundle.min.js
+npm start -- local bundle.min.js
 
 # Use the 8B model explicitly
-npx cartographer local bundle.min.js -m 8b
+npm start -- local bundle.min.js -m 8b
 
-# Disable GPU acceleration (e.g. for CI)
-npx cartographer local bundle.min.js --disableGpu
+# Disable GPU acceleration (e.g. CI)
+npm start -- local bundle.min.js --disableGpu
 ```
 
-Apple M-series chips are natively supported via Metal acceleration.
 
 ---
 
 ### Pipeline Options
 
-These flags are available on all provider commands (`openai`, `gemini`, `openrouter`, `local`):
+These flags are available on deobfuscation commands (`openai`, `gemini`, `openrouter`, `local`):
 
 | Flag | Description | Default |
 |------|-------------|---------|
 | `-o, --outputDir <dir>` | Directory to write output files | `output` |
-| `--contextSize <n>` | LLM context window size (tokens) | provider default |
-| `--verbose` | Print verbose logs including raw LLM input/output | off |
-| `--no-sanitizer` | Skip the Wakaru static analysis and syntax restoration pass entirely | sanitizer on |
-| `--no-heuristic-naming` | Disable Phase 3 heuristic renaming (`void 0` → `undefined`, smart-rename, etc.) | heuristics on |
+| `--contextSize <n>` | Context window passed to the renamer | `1000` |
+| `--file-concurrency <n>` | Number of files processed in parallel | `3` |
+| `--rename-all` | Rename all identifiers (skip smart filtering) | off |
+| `--verbose` | Print verbose logs including model I/O context | off |
+| `--no-sanitizer` | Skip the Wakaru syntax restoration stage | sanitizer on |
+| `--no-heuristic-naming` | Disable static heuristic naming (`void 0`, smart-rename, etc.) | heuristics on |
 
 #### Token cost estimation
 
@@ -231,23 +242,31 @@ For a rough estimate of LLM token usage before running:
 echo "$((2 * $(wc -c < yourscript.min.js)))"
 ```
 
-A minified `bootstrap.min.js` (~60 KB) costs nearly nothing on budget models via OpenRouter, and roughly $0.50 with GPT-4.
+A minified `bootstrap.min.js` (~60 KB) is typically inexpensive on budget models.
+
 
 ---
 
 ### Graph Visualization
 
-After any deobfuscation run, the output directory contains `call-graph.json`. Use the `graph` sub-command to explore it:
+After a successful deobfuscation run, JS Cartographer writes `call-graph.json`. The `graph` command reads that file and renders function-call relationships.
+
+What it does:
+
+1. Loads `call-graph.json` (`nodes` + `edges`) from your output directory.
+2. Traverses outgoing call edges from an entry function (tree mode) or from all nodes (Mermaid mode).
+3. Applies optional depth limiting with `--depth`.
+4. Renders either terminal-friendly ASCII output or a Mermaid flowchart file.
 
 ```shell
-# ASCII tree rooted at a specific function (--entry is required for tree format)
-cartographer graph ./output --entry "src/app.js:initApp"
+# ASCII tree rooted at a specific function (--entry required for tree mode)
+npm start -- graph ./output --entry "src/app.js:initApp"
 
 # Limit traversal depth
-cartographer graph ./output --entry "src/app.js:initApp" --depth 3
+npm start -- graph ./output --entry "src/app.js:initApp" --depth 3
 
-# Export the full graph as a Mermaid flowchart
-cartographer graph ./output --format mermaid
+# Export Mermaid flowchart (full graph if no --entry)
+npm start -- graph ./output --format mermaid
 # Writes: ./output/call-graph.mermaid
 ```
 
@@ -262,32 +281,35 @@ src/app.js:initApp
     └── src/server.js:bindRoutes
 ```
 
-The Mermaid output can be pasted directly into any Mermaid-compatible renderer (GitHub Markdown, Mermaid Live Editor, VS Code extensions).
+Tree mode is best for tracing one execution path. Mermaid mode is best for sharing or reviewing the full graph in tools that render Mermaid.
+
 
 ---
 
 ### All CLI Options
 
-```
-cartographer <command> [options] <input>
+```text
+npm start -- <command> [options] <input>
 
 Commands:
   local       Use a local GGUF model to unminify code
   openai      Use OpenAI's API to unminify code
-  gemini      Use Google Gemini's API to unminify code
+  gemini      Use Google Gemini/AIStudio API to unminify code
   openrouter  Use OpenRouter's API to unminify code
-  download    Download a local model
+  download    Download supported local models (subcommands: 2b, 8b)
   graph       Visualize the call graph of a deobfuscated project
 
-Deobfuscation options (local | openai | gemini | openrouter):
-  -m, --model <model>           LLM model name
+Shared deobfuscation options (local | openai | gemini | openrouter):
+  -m, --model <model>           Model name
   -o, --outputDir <dir>         Output directory                  [default: output]
-  -k, --apiKey <key>            API key (or use env var)
-  --baseURL <url>               Override API base URL
-  --contextSize <n>             LLM context window size (tokens)
+  -k, --apiKey <key>            API key (or environment variable)
+  --baseURL <url>               Override API base URL (OpenAI/OpenRouter)
+  --contextSize <n>             Context size                       [default: 1000]
+  --file-concurrency <n>        Number of files in parallel        [default: 3]
+  --rename-all                  Rename all identifiers
   --verbose                     Verbose output
   --no-sanitizer                Disable Wakaru syntax restoration
-  --no-heuristic-naming         Disable static heuristic renaming
+  --no-heuristic-naming         Disable static heuristic naming
 
 local-specific options:
   -s, --seed <seed>             Seed for reproducible results
@@ -298,6 +320,16 @@ graph options:
   -d, --depth <n>               Maximum depth to traverse
   -f, --format <type>           Output format: tree (default) or mermaid
 ```
+
+For exact options in your current branch, use:
+
+```shell
+npm start -- --help
+npm start -- openrouter --help
+npm start -- local --help
+npm start -- graph --help
+```
+
 
 ---
 
@@ -353,93 +385,65 @@ Every deobfuscation run produces the following in the output directory:
 
 ## Project Structure
 
-```
+A trimmed view of the current repository layout (focused on active runtime and test paths):
+
+```text
 js-cartographer/
 ├── src/
-│   ├── index.ts                     # CLI entry point; registers all commands
-│   ├── unminify.ts                  # Core pipeline orchestrator
-│   ├── cli.ts                       # Base Commander instance factory
-│   ├── cli-error.ts                 # Typed CLI error helpers
-│   ├── env.ts                       # Environment variable loader
-│   ├── file-utils.ts                # File existence / path helpers
-│   ├── number-utils.ts              # Numeric CLI argument parser
-│   ├── local-models.ts              # GGUF model registry and downloader
-│   ├── progress.ts                  # CLI progress bar helpers
-│   ├── verbose.ts                   # Verbose logging singleton
-│   ├── url.ts                       # Template literal URL helper
-│   │
+│   ├── index.ts                     # CLI entrypoint
+│   ├── unminify.ts                  # Pipeline orchestrator
+│   ├── concurrency.ts               # pLimit/withRetry helpers
+│   ├── cli.ts                       # Shared Commander instance
 │   ├── commands/
-│   │   ├── openai.ts                # `cartographer openai` command
-│   │   ├── gemini.ts                # `cartographer gemini` command
-│   │   ├── openrouter.ts            # `cartographer openrouter` command
-│   │   ├── local.ts                 # `cartographer local` command
-│   │   ├── download.ts              # `cartographer download` command
-│   │   ├── graph.ts                 # `cartographer graph` command
-│   │   └── default-args.ts          # Shared default CLI argument values
-│   │
+│   │   ├── openai.ts
+│   │   ├── gemini.ts
+│   │   ├── openrouter.ts
+│   │   ├── local.ts
+│   │   ├── download.ts
+│   │   └── graph.ts
 │   ├── plugins/
-│   │   ├── babel/
-│   │   │   └── babel.ts             # Babel AST transforms (Yoda, void→undefined, etc.)
-│   │   ├── prettier.ts              # Prettier formatting plugin
-│   │   ├── webcrack.ts              # webcrack bundle unpacker wrapper
-│   │   ├── gemini-rename.ts         # Gemini API identifier renamer
-│   │   ├── openai/
-│   │   │   └── openai-rename.ts     # OpenAI API identifier renamer
-│   │   ├── openrouter/
-│   │   │   └── openrouter-rename.ts # OpenRouter identifier renamer
+│   │   ├── babel/babel.ts
+│   │   ├── webcrack.ts
+│   │   ├── prettier.ts
+│   │   ├── gemini-rename.ts
+│   │   ├── openai/openai-rename.ts
+│   │   ├── openrouter/openrouter-rename.ts
 │   │   └── local-llm-rename/
-│   │       ├── local-llm-rename.ts  # Local model renamer orchestrator
-│   │       ├── visit-all-identifiers.ts  # Babel traversal: visits every identifier
-│   │       ├── unminify-variable-name.ts # Per-identifier LLM call
-│   │       ├── llama.ts             # node-llama-cpp model loader/session
-│   │       ├── gbnf.ts              # Grammar-constrained output (GBNF)
-│   │       ├── define-filename.ts   # Filename hint generation for LLM context
-│   │       └── phi-jinja-template.ts # Chat template for Phi models
-│   │
-│   └── services/
-│       ├── sanitizer/
-│       │   ├── index.ts             # WakaruSanitizer: transform() entry point
-│       │   ├── types.ts             # SanitizerConfig, TransformationResult, CodeTransformer
-│       │   └── rules.ts             # STRUCTURAL_RULES + HEURISTIC_RULES arrays
-│       ├── graph/
-│       │   ├── index.ts             # GraphBuilder: produces module-graph.json
-│       │   ├── types.ts             # FileNode, ModuleGraph types
-│       │   └── file-utils.ts        # Shared file-listing utility (used by graph + callgraph)
-│       └── callgraph/
-│           ├── index.ts             # CallGraphBuilder: produces call-graph.json
-│           ├── types.ts             # FunctionNode, CallEdge, CallGraphData types
-│           └── presenter.ts         # GraphPresenter: toAsciiTree(), toMermaid()
-│
+│   │       ├── local-llm-rename.ts
+│   │       ├── identifier-filter.ts
+│   │       ├── visit-all-identifiers.ts
+│   │       ├── unminify-variable-name.ts
+│   │       ├── llama.ts
+│   │       └── gbnf.ts
+│   ├── services/
+│   │   ├── sanitizer/               # Wakaru wrapper + rule config
+│   │   ├── graph/                   # module-graph builder
+│   │   └── callgraph/               # semantic call graph + presenters
+│   ├── test/                        # e2e + LLM validation tests
+│   └── test-utils.ts                # CLI spawn/assert helpers
 ├── fixtures/
-│   ├── example.min.js               # Simple standalone minified JS example
-│   └── webpack-hello-world/
-│       ├── src/                     # Ground-truth source files (math, greeting, api, app)
-│       └── dist/bundle.js           # Pre-built Webpack 5 + Babel (IE11) bundle
-│                                    # Primary validation target for the full pipeline
-│
+│   ├── example.min.js
+│   └── webpack-hello-world/         # canonical end-to-end fixture
 ├── testing/
-│   └── TESTING_GUIDE.md             # Source-of-truth for all test conventions
-│
-├── .specs/
-│   ├── description.md               # Project overview
-│   ├── outline.md                   # Implementation phase outline
-│   └── phase-1.md … phase-6.md      # Per-phase implementation specs
-│
-├── dist/                            # Compiled output (pkgroll — ESM)
-├── IMPLEMENTATION_PLAN.md           # Development roadmap and phase details
-├── LOG_BOOK.md                      # Changelog of completed features
-├── .env.example                     # Environment variable reference
-├── package.json
-└── eslint.config.js
+│   ├── TESTING_GUIDE.md
+│   └── phase_tests/
+├── conductor/
+│   └── testing-quality-suite.md     # quality-suite plan/spec
+├── .specs/                          # implementation phase specs
+├── dist/                            # compiled CLI output
+├── README.md
+└── package.json
 ```
 
 ### Key architectural patterns
 
-**Plugin pipeline** (`src/unminify.ts`): The core pipeline accepts an array of `(code: string) => Promise<string>` transforms. This signature is intentionally simple — each plugin is a pure async string-to-string function. The sanitizer runs as a pre-plugin step (it receives a file path in addition to code) and is not inserted into the plugins array, preserving backward compatibility.
+**Plugin pipeline** (`src/unminify.ts`): each deobfuscation provider composes `babel -> provider rename plugin -> prettier` into a simple async string-to-string chain. The sanitizer runs before plugin execution.
 
-**Wakaru loading via `createRequire`**: `@wakaru/unminify` ships as a CJS build with a Prettier v2 sub-path incompatibility in ESM strict mode. The `WakaruSanitizer` loads it lazily via `createRequire(import.meta.url)` to avoid triggering the import at module load time.
+**Humanify identifier strategy** (`src/plugins/local-llm-rename/visit-all-identifiers.ts` + `identifier-filter.ts`): by default, only likely-obfuscated identifiers are sent to the LLM. Use `--rename-all` to bypass filtering.
 
-**Graph IDs**: Both `module-graph.json` and `call-graph.json` use path-qualified IDs (e.g., `src/app.js:startApp`) to avoid naming collisions across files and make graph edges human-readable.
+**Wakaru loading via `createRequire`** (`src/services/sanitizer/index.ts`): `@wakaru/unminify` is loaded lazily via `createRequire(import.meta.url)` for compatibility with its CJS packaging.
+
+**Graph IDs**: `call-graph.json` and graph output use path-qualified IDs (e.g., `src/app.js:initApp`) to avoid cross-file naming collisions.
 
 ---
 
@@ -449,24 +453,40 @@ js-cartographer/
 
 ```shell
 npm run build         # Compile TypeScript to dist/ via pkgroll
-npm start             # Run directly via tsx (no build required)
+npm start -- --help   # Run CLI directly via tsx (no build required)
 npm run debug         # Run with Node.js inspector attached
 ```
 
 ### Testing
 
-The project uses Node.js's built-in `node:test` runner with `tsx` for TypeScript execution. There is no Jest or Vitest.
+The project uses Node.js's built-in `node:test` runner with `tsx` for TypeScript execution.
 
 ```shell
-npm run test           # Run all test suites
-npm run test:unit      # Unit tests (*.test.ts) — no I/O, no LLM
-npm run test:e2e       # E2E tests (*.e2etest.ts) — requires a build
-npm run test:llm       # Local LLM accuracy tests (*.llmtest.ts)
-npm run test:openai    # OpenAI accuracy tests (costs API credits)
-npm run test:gemini    # Gemini accuracy tests (costs API credits)
+npm run test            # Runs test:unit + test:e2e + test:llm
+npm run test:unit       # Unit tests (*.test.ts)
+npm run test:e2e        # E2E tests (*.e2etest.ts), runs npm run build first
+npm run test:llm        # Local-model accuracy tests (*.llmtest.ts)
+npm run test:openai     # OpenAI accuracy tests (*.openaitest.ts)
+npm run test:gemini     # Gemini accuracy tests (*.geminitest.ts)
+```
+
+`test:e2e` and `test:llm` include local-model coverage. Download a model first:
+
+```shell
+npm start -- download 2b
+```
+
+About `npm run test:quality`:
+
+- The script exists in `package.json`, but currently points to `testing/quality/runner.ts`, which is not present in this branch.
+- Until that runner is restored, use this working quality gate:
+
+```shell
+npm run lint && npm run test:unit && npm run test:e2e
 ```
 
 Test files live **alongside the source they test** inside `src/`. See `testing/TESTING_GUIDE.md` for conventions.
+
 
 ### Linting
 
@@ -566,181 +586,3 @@ When adding new functionality:
 ## License
 
 MIT — see individual source files for details.
-# JS Cartographer
-
-This project integrates Wakaru's advanced static analysis and syntax restoration capabilities into the Humanify CLI pipeline to create a highly optimized JavaScript deobfuscation tool. By pre-processing transpiled code to restore modern syntax and deterministically rename standard APIs, the system significantly reduces LLM token costs while improving naming accuracy. Additionally, the integration maps project-wide dependencies to generate a semantic call graph, providing users with a comprehensive visual trace of function execution across the unbundled codebase.
-
-## Prerequisites
-
-- Node.js >= 20
-- npm >= 9
-
-## Installation
-
-```shell
-npm ci
-```
-
-## Environment Setup
-
-Copy the example environment file and fill in the API key(s) for the LLM provider(s) you intend to use:
-
-```shell
-cp .env.example .env
-```
-
-Edit `.env` and set at least one of:
-
-| Variable | Provider |
-|---|---|
-| `OPENROUTER_API_KEY` | OpenRouter (recommended) |
-| `OPENAI_API_KEY` | OpenAI |
-| `GEMINI_API_KEY` | Google Gemini / AIStudio |
-
-No key is needed for `local` mode (see below).
-
-## Usage
-
-Run the CLI via npm:
-
-```shell
-npm start -- <command> [options] <input>
-```
-
-Or, after building (`npm run build`), use the installed binary:
-
-```shell
-npx cartographer <command> [options] <input>
-```
-
-### OpenRouter (Recommended)
-
-```shell
-npm start -- openrouter fixtures/webpack-hello-world/dist/bundle.js
-```
-
-Specify a different model with `-m`:
-
-```shell
-npm start -- openrouter fixtures/webpack-hello-world/dist/bundle.js -m anthropic/claude-3.5-sonnet
-```
-
-Available OpenRouter models can be found at [openrouter.ai/models](https://openrouter.ai/models). Default is `x-ai/grok-4.1-fast`.
-
-### OpenAI
-
-```shell
-npm start -- openai fixtures/webpack-hello-world/dist/bundle.js
-```
-
-Specify a different model with `-m`:
-
-```shell
-npm start -- openai fixtures/webpack-hello-world/dist/bundle.js -m gpt-4o
-```
-
-Common models: `gpt-4o` (default: `gpt-4o-mini`), `gpt-4-turbo`, `gpt-3.5-turbo`
-
-### Google Gemini
-
-```shell
-npm start -- gemini fixtures/webpack-hello-world/dist/bundle.js
-```
-
-Specify a different model with `-m`:
-
-```shell
-npm start -- gemini fixtures/webpack-hello-world/dist/bundle.js -m gemini-2.0-flash
-```
-
-Common models: `gemini-1.5-flash` (default), `gemini-1.5-pro`, `gemini-2.0-flash`, `gemini-2.0-pro`
-
-### Local LLM (no API key required)
-
-Download a model first (one-time setup):
-
-```shell
-npm start -- download 2b
-```
-
-Then analyze the bundle:
-
-```shell
-npm start -- local fixtures/webpack-hello-world/dist/bundle.js
-```
-
-Specify a different model with `-m`:
-
-```shell
-npm start -- local fixtures/webpack-hello-world/dist/bundle.js -m 8b
-```
-
-Available models: `2b` (default), `8b`
-
-### Output and Options
-
-By default, output is written to the `output/` directory. Override with `-o`:
-
-```shell
-npm start -- local fixtures/webpack-hello-world/dist/bundle.js -o analysis-output
-```
-
-For verbose output, add the `--verbose` flag:
-
-```shell
-npm start -- local fixtures/webpack-hello-world/dist/bundle.js --verbose
-```
-
-## Analyzing the Test Fixture
-
-The `fixtures/webpack-hello-world/` directory contains a complete webpack 5 + Babel (IE11 target) application. The bundled output (`dist/bundle.js`) serves as the primary test input, while the original source files in `fixtures/webpack-hello-world/src/` act as ground truth for validating deobfuscation quality.
-
-### Build the fixture
-
-Before analyzing, ensure the fixture bundle is built:
-
-```shell
-npm ci --prefix fixtures/webpack-hello-world
-npm run build --prefix fixtures/webpack-hello-world
-```
-
-This produces `fixtures/webpack-hello-world/dist/bundle.js`.
-
-### Generate an analysis
-
-To deobfuscate and analyze the bundle using any provider:
-
-**Using local LLM (free, no API key):**
-```shell
-npm start -- local fixtures/webpack-hello-world/dist/bundle.js -o fixture-analysis
-```
-
-**Using OpenRouter:**
-```shell
-npm start -- openrouter fixtures/webpack-hello-world/dist/bundle.js -o fixture-analysis
-```
-
-**Using OpenAI:**
-```shell
-npm start -- openai fixtures/webpack-hello-world/dist/bundle.js -o fixture-analysis
-```
-
-**Using Google Gemini:**
-```shell
-npm start -- gemini fixtures/webpack-hello-world/dist/bundle.js -o fixture-analysis
-```
-
-The analyzed and deobfuscated code will be written to `fixture-analysis/`. Compare the output against the original source in `fixtures/webpack-hello-world/src/` to validate quality.
-
-## Development
-
-| Command | Description |
-|---|---|
-| `npm run build` | Compile TypeScript to `dist/` via pkgroll |
-| `npm run test:unit` | Run unit tests (23 tests, no LLM/API required) |
-| `npm run test:e2e` | Run end-to-end tests (requires a build) |
-| `npm run lint` | Run Prettier + ESLint checks |
-
-## License
-
-MIT
