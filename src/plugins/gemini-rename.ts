@@ -2,6 +2,8 @@ import { visitAllIdentifiers } from "./local-llm-rename/visit-all-identifiers.js
 import { verbose } from "../verbose.js";
 import { showPercentage } from "../progress.js";
 import { withRetry } from "../concurrency.js";
+import { detectFrameworks } from "../services/heuristics/framework-detector.js";
+import { buildFrameworkPrompt } from "./prompts/framework-rules.js";
 import {
   GoogleGenerativeAI,
   ModelParams,
@@ -22,6 +24,7 @@ export function geminiRename({
   const client = new GoogleGenerativeAI(apiKey);
 
   return async (code: string): Promise<string> => {
+    const frameworks = await detectFrameworks(code);
     return await visitAllIdentifiers(
       code,
       async (name, surroundingCode) => {
@@ -30,7 +33,7 @@ export function geminiRename({
 
         const renamed = await withRetry(async () => {
           const model = client.getGenerativeModel(
-            toRenameParams(name, modelName)
+            toRenameParams(name, modelName, frameworks)
           );
           const result = await model.generateContent(surroundingCode);
           return JSON.parse(result.response.text()).newName;
@@ -47,7 +50,12 @@ export function geminiRename({
   };
 }
 
-function toRenameParams(name: string, model: string): ModelParams {
+function toRenameParams(
+  name: string,
+  model: string,
+  frameworks: string[] = []
+): ModelParams {
+  const frameworkRules = buildFrameworkPrompt(frameworks);
   return {
     model,
     systemInstruction: `Rename Javascript variables/function \`${name}\` to have descriptive name based on their usage in the code.
@@ -58,7 +66,7 @@ The code you receive has already been structurally de-transpiled and formatted. 
 
 1. **Respect Static Analysis:** The code has been pre-analyzed. If a variable is already named meaningfully (e.g., \`document\`, \`window\`, \`element\`, \`jsonResponse\`), **YOU MUST NOT RENAME IT**. Treat these names as locked facts.
 2. **Focus on the Unknown:** Only rename variables that are still obfuscated (e.g., \`a\`, \`x\`, \`_0x4f2\`, \`var1\`).
-3. **No Hallucinations:** Do not "guess" a name if you are unsure. If a variable name is locked, use it exactly as is.`,
+3. **No Hallucinations:** Do not "guess" a name if you are unsure. If a variable name is locked, use it exactly as is.${frameworkRules ? `\n${frameworkRules}` : ""}`,
     generationConfig: {
       responseMimeType: "application/json",
       responseSchema: {
