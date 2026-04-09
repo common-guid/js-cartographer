@@ -7,6 +7,7 @@ import { cli } from "./cli.js";
 import { azure } from "./commands/gemini.js";
 import { openrouter } from "./commands/openrouter.js";
 import { graph } from "./commands/graph.js";
+import { explore } from "./commands/explore.js";
 
 cli()
   .name("cartographer")
@@ -18,4 +19,5 @@ cli()
   .addCommand(openrouter)
   .addCommand(download())
   .addCommand(graph)
+  .addCommand(explore)
   .parse(process.argv);

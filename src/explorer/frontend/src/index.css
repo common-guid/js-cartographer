@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* React Flow dark theme overrides */
+.react-flow__background {
+  background-color: #0d1117 !important;
+}
+
+.react-flow__minimap {
+  background-color: #161b22 !important;
+}
+
+.react-flow__controls button {
+  background-color: #161b22 !important;
+  color: #c9d1d9 !important;
+  border-color: #30363d !important;
+}
+
+.react-flow__controls button:hover {
+  background-color: #30363d !important;
+}

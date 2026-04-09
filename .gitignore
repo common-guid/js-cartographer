@@ -12,3 +12,4 @@ node_modules/
 analysis-output/
 
 conductor/
+src/explorer/frontend/node_modules/

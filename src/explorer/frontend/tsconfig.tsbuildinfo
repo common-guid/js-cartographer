@@ -1,0 +1,1 @@
+{"root":["./src/App.tsx","./src/main.tsx","./src/vite-env.d.ts","./src/components/CodePane.tsx","./src/components/GraphPane.tsx","./src/components/Header.tsx","./src/lib/graph-transform.ts","./src/lib/types.ts","./src/store/explorer-store.ts"],"version":"5.9.3"}
