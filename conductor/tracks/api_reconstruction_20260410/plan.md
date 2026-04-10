@@ -37,7 +37,7 @@
     - [ ] Define an internal representation for the discovered routes, methods, and parameters.
 - [x] Task: OpenAPI 3.0 Exporter (bd8d16b)
     - [ ] Implement a generator to produce a valid OpenAPI JSON/YAML file.
-- [ ] Task: Route Deduplication
+- [x] Task: Route Deduplication (31f63f3)
     - [ ] Ensure that duplicate routes discovered across different modules are merged correctly.
 - [ ] Task: Metadata Enrichment
     - [ ] Use the LLM to provide descriptions for routes and parameters based on surrounding code context.
