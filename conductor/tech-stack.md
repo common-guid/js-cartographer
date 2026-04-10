@@ -16,6 +16,7 @@
 - **Babel:** Used for AST parsing and transformations.
 - **Wakaru:** Integrated for static structural restoration and heuristic renaming.
 - **Webcrack:** Used for unbundling webpack and other formats.
+- **OpenAPI 3.0:** Support for exporting reconstructed API surfaces in standard specification format.
 
 ## LLM Integration
 - **OpenAI:** API-based model support.
