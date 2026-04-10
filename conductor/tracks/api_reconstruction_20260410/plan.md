@@ -50,7 +50,7 @@
 
 - [x] Task: API Surface View (37592d7)
     - [ ] Create a new "API Explorer" tab in the web interface.
-- [ ] Task: Route-to-Source Linking
+- [x] Task: Route-to-Source Linking (37592d7)
     - [ ] Enable clicking an API route to jump to the code that calls it.
 - [ ] Task: Attack Surface Highlighting
     - [ ] Visually flag "sensitive" or "hidden" endpoints in the UI.
