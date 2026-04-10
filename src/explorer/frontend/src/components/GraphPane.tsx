@@ -13,10 +13,12 @@ import '@xyflow/react/dist/style.css';
 
 import { useExplorerStore } from '../store/explorer-store';
 import { callGraphToFlow, moduleGraphToFlow } from '../lib/graph-transform';
+import ApiSurfaceView from './ApiSurfaceView';
 
 export default function GraphPane() {
   const callGraph = useExplorerStore((s) => s.callGraph);
   const moduleGraph = useExplorerStore((s) => s.moduleGraph);
+  const apiSurface = useExplorerStore((s) => s.apiSurface);
   const graphView = useExplorerStore((s) => s.graphView);
   const selectedNodeId = useExplorerStore((s) => s.selectedNodeId);
   const selectNode = useExplorerStore((s) => s.selectNode);
@@ -89,12 +91,16 @@ export default function GraphPane() {
     [graphView, selectNode, selectFile],
   );
 
-  if (!callGraph && !moduleGraph) {
+  if (!callGraph && !moduleGraph && !apiSurface) {
     return (
       <div className="flex items-center justify-center h-full text-explorer-text-dim">
-        No graph data available.
+        No data available.
       </div>
     );
+  }
+
+  if (graphView === 'api-surface') {
+    return <ApiSurfaceView />;
   }
 
   return (
