@@ -73,6 +73,30 @@ Output directory: recovered source files + graph artifacts
 
 LLMs in this pipeline are used for naming, while structural restoration is handled by AST transforms. That separation is what keeps output readable without sacrificing semantic stability.
 
+### Framework-Aware Context & Heuristics
+
+One of the highest-leverage enhancements to JS Cartographer is **automatic framework detection** and context injection. Modern bundles are shaped by their frameworks — React, Express, Vue, etc. — but the LLM renamer has no way to know this from obfuscated code alone. The framework-heuristics track solves this:
+
+1. **Deterministic detection** — A single Babel AST pass per file looks for telltale patterns:
+   - `import/require('react')`, JSX syntax, `React.createElement()` → React
+   - `import/require('express')` → Express.js
+   - Additional frameworks can be trivially added
+
+2. **Zero-cost** — Detection runs once per file during transpilation; no LLM calls.
+
+3. **Prompt augmentation** — Once a framework is detected, the LLM's system prompt is conditionally enriched with framework-specific "Standard Operating Procedures." For React, this includes:
+   - Hook variable destructuring: `useState` returns `[state, setState]`
+   - Component names: capitalized and often suffixed with `Component`
+   - JSX fragment names and element-holding variables
+
+   For Express, this includes middleware patterns, request/response handler conventions, route builder idioms, etc.
+
+4. **Idiiomatic output** — The LLM produces names that *feel* native to the framework, dramatically reducing the "generated code" impression. A React hook variable is instantly recognizable as `useAuth`, not `getRenamedVar42`.
+
+5. **No false positives** — Files with no detected framework use the generic prompt; detection is purely additive.
+
+This approach makes the LLM's job easier (smaller decision space, clearer conventions), produces more maintainable names, and keeps the pipeline's determinism intact. Framework detection is pluggable, so new frameworks and domain-specific patterns can be added without changing core logic.
+
 ---
 
 ## Features
@@ -85,6 +109,7 @@ LLMs in this pipeline are used for naming, while structural restoration is handl
   - Optional chaining, nullish coalescing, template literals
   - Sequence expression splitting (vital for LLM comprehension)
 - **Heuristic naming**: Deterministically renames `void 0` → `undefined`, normalizes DOM/Node.js API usage patterns, and reduces LLM token costs with character-savings metrics
+- **Framework-aware context**: Automatically detects framework fingerprints (React hooks, JSX, Express middleware patterns) and injects framework-specific naming conventions into the LLM prompt. This dramatically improves identifier quality by teaching the LLM idiomatic patterns (e.g., `useState` hook destructuring as `[state, setState]`, React component names capitalized, Express routes as `(req, res, next) => {}`) without polluting the generic prompt for non-framework code. Detection is deterministic and cost-free.
 - **Module dependency graph**: Writes `module-graph.json` mapping all `import`/`require` relationships across the unbundled project
 - **Semantic call graph**: Writes `call-graph.json` indexing every function definition and call edge (internal and cross-file)
 - **Graph visualization**: `cartographer graph` sub-command renders the call graph as a depth-limited ASCII tree or Mermaid flowchart
@@ -558,8 +583,6 @@ Expose the internal `(code: string) => Promise<string>` pipeline as a programmat
 ### Dead code / reachability analysis
 Use the call graph to identify functions that are never called from any entry point, flagging them as potentially dead code. This would aid in both understanding and cleaning up obfuscated bundles.
 
-### Framework-aware renaming hints
-Detect common framework patterns (React component shapes, Express route handlers, Node.js event emitter patterns) and inject framework-specific system prompt context into the LLM renaming step to produce higher-quality, idiomatic names.
 
 ### Configurable rule profiles
 Expose `STRUCTURAL_RULES` and `HEURISTIC_RULES` through a JSON or YAML config file, allowing users to enable, disable, or reorder individual Wakaru transformation rules without modifying source code or rebuilding.
