@@ -54,6 +54,6 @@
     - [ ] Enable clicking an API route to jump to the code that calls it.
 - [x] Task: Attack Surface Highlighting (4a3656c)
     - [ ] Visually flag "sensitive" or "hidden" endpoints in the UI.
-- [ ] Task: Download Export
+- [x] Task: Download Export (ffc7704)
     - [ ] Add a button to download the generated OpenAPI specification.
 - [ ] Task: Conductor - User Manual Verification 'Phase 4: Explorer Integration & Reporting' (Protocol in workflow.md)
