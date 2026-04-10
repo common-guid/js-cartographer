@@ -39,7 +39,7 @@
     - [ ] Implement a generator to produce a valid OpenAPI JSON/YAML file.
 - [x] Task: Route Deduplication (31f63f3)
     - [ ] Ensure that duplicate routes discovered across different modules are merged correctly.
-- [ ] Task: Metadata Enrichment
+- [x] Task: Metadata Enrichment (3978036)
     - [ ] Use the LLM to provide descriptions for routes and parameters based on surrounding code context.
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: API Schema Generation' (Protocol in workflow.md)
 
