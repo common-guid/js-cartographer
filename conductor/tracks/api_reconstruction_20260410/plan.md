@@ -22,7 +22,7 @@
     - [ ] Use the LLM to analyze complex URL construction logic that static analysis misses (e.g., `const url = [base, path, id].join("/")`).
 - [x] Task: Query Parameter Scanner (e7380a7)
     - [ ] Scan for assignment/concatenation patterns for query strings (e.g., `?debug=true`, `?admin=1`).
-- [ ] Task: Conditional Parameter Detection
+- [x] Task: Conditional Parameter Detection (236d7b0)
     - [ ] Identify parameters that are only added based on specific conditions or state.
 - [ ] Task: Request Body Extraction
     - [ ] Analyze `body` or `data` arguments in `fetch`/`axios` calls to infer the JSON schema of POST/PUT requests.
