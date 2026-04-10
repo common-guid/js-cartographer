@@ -562,6 +562,36 @@ cp .env.example .env
 
 The following features are candidates for future development, ordered roughly by impact and feasibility.
 
+### Tests
+
+Comprehensive test suite additions to improve coverage and reduce blind spots.
+
+#### Highest-priority gaps (completed)
+- [x] End-to-end fixture validation against the new task manager — `src/services/fixture.e2etest.ts`
+- [x] `--no-heuristic-naming` CLI contract test (all providers) — added to `src/services/sanitizer/sanitizer-flag.e2etest.ts`
+- [x] `--rename-all` integration behavior test — `src/plugins/local-llm-rename/rename-all.test.ts`
+- [x] `webcrack` output discovery test (recursive files) — `src/plugins/webcrack.test.ts`
+- [x] Call graph import variants test (alias, default, namespace, CJS) — added to `src/services/callgraph/index.test.ts`
+
+#### Additional comprehensive tests
+- [ ] Call graph node types coverage (arrow functions, expressions, class methods)
+- [ ] Call graph duplicate edge suppression
+- [ ] Graph builder import normalization test
+- [ ] `GraphPresenter.toMermaid` depth/entry tests
+- [ ] `graph` command failure-path E2E tests
+- [ ] `explore` command tests (`--no-open`, invalid port, startup/shutdown)
+- [ ] Explorer server negative-path tests (missing files, malformed JSON, large reads)
+- [ ] Explorer frontend transform unit tests (layout, edge dedup, dangling edges)
+- [ ] Explorer store state-machine tests (history, transitions, error fallback)
+- [ ] Sanitizer fallback tests (Prettier/Wakaru failure resilience)
+- [ ] Input validation unit tests for utilities (number-utils, file-utils, env, url)
+- [ ] Download/model management tests (unknown model, already downloaded, async completion)
+- [ ] Provider prompt-shape tests (OpenAI, OpenRouter, Gemini framework injection)
+- [ ] `unminify` pipeline ordering test (webcrack → graph → sanitizer → plugins → callgraph)
+- [ ] Doc/fixture consistency test (fixture README references existing files)
+
+---
+
 ### Sourcemap integration
 Accept an optional `.js.map` file alongside the input bundle. When present, use original symbol names from the sourcemap as locked identifiers — the LLM would only rename symbols that have no sourcemap entry. This would dramatically improve quality for partially-obfuscated production builds.
 

@@ -18,7 +18,12 @@ export async function visitAllIdentifiers(
   onProgress?: (percentageDone: number) => void,
   renameAll: boolean = false
 ) {
-  const ast = await parseAsync(code, { sourceType: "unambiguous" });
+  const ast = await parseAsync(code, {
+    sourceType: "unambiguous",
+    parserOpts: {
+      plugins: ["jsx", "typescript"]
+    }
+  });
   const renames = new Set<string>();
   const visited = new Set<string>();
 

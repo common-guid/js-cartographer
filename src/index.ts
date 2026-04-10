@@ -9,7 +9,7 @@ import { openrouter } from "./commands/openrouter.js";
 import { graph } from "./commands/graph.js";
 import { explore } from "./commands/explore.js";
 
-cli()
+await cli()
   .name("cartographer")
   .description("Unminify code using OpenAI's API or a local LLM")
   .version(version)
@@ -20,4 +20,4 @@ cli()
   .addCommand(download())
   .addCommand(graph)
   .addCommand(explore)
-  .parse(process.argv);
+  .parseAsync(process.argv);

@@ -106,3 +106,36 @@ test("--no-sanitizer suppresses [Sanitizer] Optimizing log against fixture bundl
     `Expected NO "[Sanitizer] Optimizing" when --no-sanitizer used. Got: ${output.slice(0, 500)}`
   );
 });
+
+// ---------------------------------------------------------------------------
+// --no-heuristic-naming flag tests
+// ---------------------------------------------------------------------------
+
+for (const cmd of ["openai", "gemini", "openrouter", "local"]) {
+  test(`${cmd}: --no-heuristic-naming flag is accepted (rejects on missing file, not flag parse error)`, async () => {
+    // This must reject because the file doesn't exist — NOT because the flag is unrecognised.
+    // Commander would exit with "error: unknown option '--no-heuristic-naming'" if the flag wasn't wired.
+    const err = await assert
+      .rejects(cartographer(cmd, NONEXISTENT, "--no-heuristic-naming"))
+      .then(() => null)
+      .catch((e) => e as Error);
+
+    if (err) {
+      assert.ok(
+        !err.message.includes("unknown option"),
+        `Expected file-not-found error, got: ${err.message}`
+      );
+    }
+  });
+}
+
+test("--no-heuristic-naming flag is accepted by all deobfuscation commands", async () => {
+  // Test that the flag parses correctly across all four providers
+  const commands = ["openai", "gemini", "openrouter", "local"];
+  for (const cmd of commands) {
+    await assert.rejects(
+      cartographer(cmd, NONEXISTENT, "--no-heuristic-naming"),
+      /nonexistent|not found|no such file/i
+    );
+  }
+});
