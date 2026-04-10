@@ -9,7 +9,7 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Framework-Aware Context & Heuristics**
+- [x] **Track: Framework-Aware Context & Heuristics**
   *Link: [./tracks/framework_heuristics_20260410/](./tracks/framework_heuristics_20260410/)*
 
 ---
