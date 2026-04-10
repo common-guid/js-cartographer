@@ -56,4 +56,4 @@
     - [ ] Visually flag "sensitive" or "hidden" endpoints in the UI.
 - [x] Task: Download Export (ffc7704)
     - [ ] Add a button to download the generated OpenAPI specification.
-- [ ] Task: Conductor - User Manual Verification 'Phase 4: Explorer Integration & Reporting' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 4: Explorer Integration & Reporting' (Protocol in workflow.md)
