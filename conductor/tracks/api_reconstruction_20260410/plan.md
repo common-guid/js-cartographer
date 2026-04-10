@@ -33,7 +33,7 @@
 ## Phase 3: API Schema Generation
 ### Objective: Output a structured "Virtual OpenAPI Spec" for the discovered surface.
 
-- [ ] Task: Data Structure Design
+- [x] Task: Data Structure Design (cd84f67)
     - [ ] Define an internal representation for the discovered routes, methods, and parameters.
 - [ ] Task: OpenAPI 3.0 Exporter
     - [ ] Implement a generator to produce a valid OpenAPI JSON/YAML file.
