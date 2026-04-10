@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { CallGraphData, ModuleGraph, FunctionNode } from '../lib/types';
+import type { CallGraphData, ModuleGraph, FunctionNode, ApiSurface } from '../lib/types';
 
 export type GraphView = 'call-graph' | 'module-graph' | 'api-surface';
 
@@ -13,7 +13,7 @@ interface ExplorerState {
   // Data
   callGraph: CallGraphData | null;
   moduleGraph: ModuleGraph | null;
-  apiSurface: any | null;
+  apiSurface: ApiSurface | null;
   loading: boolean;
   error: string | null;
 

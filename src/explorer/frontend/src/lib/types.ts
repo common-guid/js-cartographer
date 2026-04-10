@@ -29,10 +29,32 @@ export interface ModuleGraph {
   entryPoint?: string;
 }
 
+export interface ApiParameter {
+  name: string;
+  type: string;
+  required?: boolean;
+  description?: string;
+}
+
+export interface ApiEndpoint {
+  path: string;
+  method: string;
+  queryParams?: ApiParameter[];
+  requestBody?: Record<string, string>;
+  sourceLocations?: { file: string; line: number; column: number }[];
+  description?: string;
+}
+
+export interface ApiSurface {
+  baseUrl?: string;
+  endpoints: ApiEndpoint[];
+}
+
 /** API response from /api/graphs */
 export interface GraphsResponse {
   callGraph: CallGraphData | null;
   moduleGraph: ModuleGraph | null;
+  apiSurface: ApiSurface | null;
 }
 
 /** API response from /api/file */

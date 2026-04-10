@@ -1,9 +1,22 @@
 import { useExplorerStore } from '../store/explorer-store';
+import { exportToOpenApi } from '../lib/openapi-exporter';
 
 export default function ApiSurfaceView() {
   const apiSurface = useExplorerStore((s) => s.apiSurface);
   const selectFile = useExplorerStore((s) => s.selectFile);
   const searchQuery = useExplorerStore((s) => s.searchQuery);
+
+  const handleExport = () => {
+    if (!apiSurface) return;
+    const openapi = exportToOpenApi(apiSurface);
+    const blob = new Blob([JSON.stringify(openapi, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'reconstructed-api.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   if (!apiSurface || !apiSurface.endpoints) {
     return (
@@ -22,7 +35,7 @@ export default function ApiSurfaceView() {
   return (
     <div className="h-full flex flex-col bg-explorer-bg overflow-hidden">
       <div className="p-4 border-b border-explorer-border flex justify-between items-center bg-explorer-surface">
-        <div>
+        <div className="flex-1 min-w-0">
           <h2 className="text-explorer-text font-semibold text-sm">API Surface</h2>
           {apiSurface.baseUrl && (
             <div className="text-explorer-accent text-xs font-mono truncate max-w-xs" title={apiSurface.baseUrl}>
@@ -30,8 +43,20 @@ export default function ApiSurfaceView() {
             </div>
           )}
         </div>
-        <div className="text-explorer-text-dim text-xs">
-          {filteredEndpoints.length} endpoints
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleExport}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-explorer-accent-dim text-white text-[10px] font-bold uppercase rounded hover:bg-explorer-accent transition-colors shadow-sm"
+            title="Export to OpenAPI 3.0"
+          >
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            Export
+          </button>
+          <div className="text-explorer-text-dim text-[10px] font-mono border-l border-explorer-border pl-3">
+            {filteredEndpoints.length} endpoints
+          </div>
         </div>
       </div>
 
