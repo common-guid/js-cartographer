@@ -5,7 +5,7 @@
 
 - [x] Task: Framework Heuristics Extension (b45545d)
     - [ ] Update the `framework-detector` to identify common routing libraries (`react-router`, `vue-router`, etc.).
-- [ ] Task: API Sink Discovery
+- [x] Task: API Sink Discovery (c377428)
     - [ ] Create a new analyzer to find all calls to `fetch`, `axios`, `XHR`, and other HTTP-related libraries.
 - [ ] Task: Basic String Resolution
     - [ ] Implement a Babel plugin to statically resolve simple string template literals and concatenations for URL arguments.
