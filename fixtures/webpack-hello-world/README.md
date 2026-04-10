@@ -1,6 +1,6 @@
 # webpack-hello-world — JS Cartographer Test Fixture
 
-A small webpack application with **known source code**, used as a ground truth to validate JS Cartographer's deobfuscation pipeline.
+A small webpack application with **known source code**, used as a ground truth to validate JS Cartographer's deobfuscation pipeline. This fixture implements a **task manager** with filtering and cross-file dependencies, providing a more realistic test target than a simple hello-world app.
 
 ## Purpose
 
@@ -16,45 +16,51 @@ The workflow is:
 
 ```
 src/
-├── math.js        — Pure utility functions (add, multiply, calculateCircleArea, clampValue)
-├── greeting.js    — Greeting helpers + GreetingFormatter class; imports from math.js
-├── api.js         — Async fetch simulation (fetchUserData, processUserData, fetchMultipleUsers); imports from math.js
-└── app.js         — Entry point; imports from all three modules
+├── tasks.js       — Core task data model and utilities (createTask, updateTaskStatus, TaskStatus enum)
+├── storage.js     — TaskStore class for in-memory task persistence; imports from tasks.js
+├── filters.js     — Async filtering and search operations (filterTasksByStatus, searchTasks, getTaskStats); imports from tasks.js
+└── app.js         — Entry point; orchestrates tasks, storage, and filters with 5 dummy tasks
 ```
 
 ## What Each File Tests
 
 | File | Wakaru Rules Exercised | Feature |
 |---|---|---|
-| `math.js` | `un-numeric-literal`, `smart-rename` | Pure functions, cross-file import source |
-| `greeting.js` | `un-es6-class`, `un-template-literals` | Class → prototype pattern restoration |
-| `api.js` | `un-async-await` | Generator state machine → async/await restoration |
-| `app.js` | All of the above | Full call graph: 5+ cross-file edges |
+| `tasks.js` | `smart-rename`, `un-numeric-literal` | Pure functions and constants, cross-file import source |
+| `storage.js` | `un-es6-class`, `un-template-literals` | Class → prototype pattern restoration |
+| `filters.js` | `un-async-await` | Generator state machine → async/await restoration |
+| `app.js` | All of the above | Full call graph: 8+ cross-file edges, realistic app logic |
 
 ## Expected Call Graph (Ground Truth)
 
 ```
-app.js:initApp
-├── greeting.js:formatGreeting
-│   └── math.js:add
-│   └── greeting.js:getTimeOfDay
-├── math.js:calculateCircleArea
-│   └── math.js:multiply
-├── api.js:processUserData
-│   ├── api.js:fetchUserData
-│   └── math.js:clampValue
-└── api.js:fetchMultipleUsers
-    └── api.js:fetchUserData
+app.js:initializeApp
+├── storage.js:TaskStore (constructor, addTask, getAllTasks, updateTask, saveToStorage)
+├── tasks.js:createTask (×5 task creations)
+├── filters.js:getTaskStats (×3 calls)
+├── filters.js:filterTasksByStatus
+├── filters.js:searchTasks
+└── storage.js:TaskStore.updateTask
 
-app.js:displayResults
-└── greeting.js:GreetingFormatter.formatFormal
+app.js:displayTaskList
+└── filters.js:getTaskStats
 ```
+
+## Dummy Data
+
+The fixture includes **5 sample tasks** with varying statuses (pending, in-progress, completed) and priorities (low, medium, high, critical):
+1. "Review pull requests" (in-progress, high priority)
+2. "Write unit tests" (pending, critical priority)
+3. "Update documentation" (completed, medium priority)
+4. "Deploy to staging" (pending, high priority)
+5. "Fix null reference bug" (in-progress, critical priority)
 
 ## How to Use as a Validation Target
 
 ```bash
 # From the JS Cartographer root:
-npx humanify openai fixtures/webpack-hello-world/dist/bundle.js -o /tmp/cartographer-out
+npm run build
+npm start -- openai fixtures/webpack-hello-world/dist/bundle.js -o /tmp/cartographer-out
 
 # Then compare recovered names against src/
 diff fixtures/webpack-hello-world/src/ /tmp/cartographer-out/
