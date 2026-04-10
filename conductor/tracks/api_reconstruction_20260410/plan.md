@@ -9,7 +9,7 @@
     - [ ] Create a new analyzer to find all calls to `fetch`, `axios`, `XHR`, and other HTTP-related libraries.
 - [x] Task: Basic String Resolution (12ef885)
     - [ ] Implement a Babel plugin to statically resolve simple string template literals and concatenations for URL arguments.
-- [ ] Task: Base URL Normalization
+- [x] Task: Base URL Normalization (102ced4)
     - [ ] Develop a heuristic to detect common API base paths (e.g., `/api/v1`, `https://api.example.com`).
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Core Route Synthesis' (Protocol in workflow.md)
 
