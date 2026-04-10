@@ -41,12 +41,11 @@ export async function findApiSinks(code: string): Promise<ApiSink[]> {
                 (p) =>
                   p.type === "ObjectProperty" &&
                   p.key.type === "Identifier" &&
-                  p.key.name === "method" &&
-                  p.value.type === "StringLiteral"
+                  p.key.name === "method"
               );
-              if (methodProp && "value" in methodProp) {
-                  // @ts-ignore
-                method = methodProp.value.value.toUpperCase();
+              if (methodProp && methodProp.type === "ObjectProperty") {
+                const m = resolveString(methodProp.value);
+                if (m !== null) method = m.toUpperCase();
               }
             }
             sinks.push({ url, method, loc: node.loc?.start });
@@ -82,24 +81,25 @@ export async function findApiSinks(code: string): Promise<ApiSink[]> {
             (p) =>
               p.type === "ObjectProperty" &&
               p.key.type === "Identifier" &&
-              p.key.name === "url" &&
-              p.value.type === "StringLiteral"
+              p.key.name === "url"
           );
           const methodProp = config.properties.find(
             (p) =>
               p.type === "ObjectProperty" &&
               p.key.type === "Identifier" &&
-              p.key.name === "method" &&
-              p.value.type === "StringLiteral"
+              p.key.name === "method"
           );
 
-          if (urlProp && "value" in urlProp && urlProp.value.type === "StringLiteral") {
-            const url = urlProp.value.value;
-            let method = "GET";
-            if (methodProp && "value" in methodProp && methodProp.value.type === "StringLiteral") {
-              method = methodProp.value.value.toUpperCase();
+          if (urlProp && urlProp.type === "ObjectProperty") {
+            const url = resolveString(urlProp.value, path.get("arguments.0.properties") as any); // Simplified path
+            if (url !== null) {
+              let method = "GET";
+              if (methodProp && methodProp.type === "ObjectProperty") {
+                const m = resolveString(methodProp.value, path.get("arguments.0.properties") as any);
+                if (m !== null) method = m.toUpperCase();
+              }
+              sinks.push({ url, method, loc: node.loc?.start });
             }
-            sinks.push({ url, method, loc: node.loc?.start });
           }
         }
       },
@@ -111,10 +111,33 @@ export async function findApiSinks(code: string): Promise<ApiSink[]> {
   return sinks;
 }
 
-function resolveString(node: any): string | null {
+function resolveString(node: any, path?: any): string | null {
   if (node.type === "StringLiteral") {
     return node.value;
   }
-  // Future: Handle TemplateLiteral, etc.
+
+  // Handle simple concatenation: 'a' + 'b'
+  if (node.type === "BinaryExpression" && node.operator === "+") {
+    const left = resolveString(node.left);
+    const right = resolveString(node.right);
+    if (left !== null && right !== null) {
+      return left + right;
+    }
+  }
+
+  // Handle template literals: `/api/${'users'}`
+  if (node.type === "TemplateLiteral") {
+    let result = "";
+    for (let i = 0; i < node.quasis.length; i++) {
+      result += node.quasis[i].value.cooked || "";
+      if (i < node.expressions.length) {
+        const expr = resolveString(node.expressions[i]);
+        if (expr === null) return null; // Can't resolve part of it
+        result += expr;
+      }
+    }
+    return result;
+  }
+
   return null;
 }

@@ -34,4 +34,18 @@ describe("sink-discovery", () => {
     assert.strictEqual(sinks[0].url, "/api/update");
     assert.strictEqual(sinks[0].method, "PUT");
   });
+
+  it("resolves string concatenation", async () => {
+    const code = "fetch('/api/' + 'users');";
+    const sinks = await findApiSinks(code);
+    assert.strictEqual(sinks.length, 1);
+    assert.strictEqual(sinks[0].url, "/api/users");
+  });
+
+  it("resolves template literals", async () => {
+    const code = "const path = 'users'; fetch(`/api/${'users'}`);";
+    const sinks = await findApiSinks(code);
+    assert.strictEqual(sinks.length, 1);
+    assert.strictEqual(sinks[0].url, "/api/users");
+  });
 });
