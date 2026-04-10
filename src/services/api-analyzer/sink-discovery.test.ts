@@ -81,4 +81,11 @@ describe("sink-discovery", () => {
     assert.ok(sinks[0].possibleUrls?.includes('/api/users'));
     assert.ok(sinks[0].possibleUrls?.includes('/api/users?admin=true'));
   });
+
+  it("extracts request body schema", async () => {
+    const code = "fetch('/api/users', { method: 'POST', body: JSON.stringify({ name: 'John', age: 30 }) });";
+    const sinks = await findApiSinks(code);
+    assert.strictEqual(sinks.length, 1);
+    assert.deepStrictEqual(sinks[0].body, { name: "string", age: "number" });
+  });
 });

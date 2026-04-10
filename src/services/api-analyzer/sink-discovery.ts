@@ -14,6 +14,7 @@ export interface ApiSink {
   method: string;
   loc?: { line: number; column: number };
   possibleUrls?: string[];
+  body?: Record<string, string>;
 }
 
 export async function findApiSinks(code: string): Promise<ApiSink[]> {
@@ -36,6 +37,7 @@ export async function findApiSinks(code: string): Promise<ApiSink[]> {
           const possibleUrls = resolveAllPossibleStrings(node.arguments[0], path.get("arguments.0"));
           if (possibleUrls.length > 0) {
             let method = "GET";
+            let body: Record<string, string> | undefined;
             if (node.arguments.length >= 2 && node.arguments[1].type === "ObjectExpression") {
               const options = node.arguments[1] as ObjectExpression;
               const methodProp = options.properties.find(
@@ -48,12 +50,23 @@ export async function findApiSinks(code: string): Promise<ApiSink[]> {
                 const m = resolveString(methodProp.value, path.get("arguments.1"));
                 if (m !== null) method = m.toUpperCase();
               }
+
+              const bodyProp = options.properties.find(
+                (p) =>
+                  p.type === "ObjectProperty" &&
+                  p.key.type === "Identifier" &&
+                  p.key.name === "body"
+              );
+              if (bodyProp && bodyProp.type === "ObjectProperty") {
+                body = inferSchema(bodyProp.value);
+              }
             }
             sinks.push({ 
               url: possibleUrls[0], 
               method, 
               loc: node.loc?.start,
-              possibleUrls: possibleUrls.length > 1 ? possibleUrls : undefined
+              possibleUrls: possibleUrls.length > 1 ? possibleUrls : undefined,
+              body
             });
           }
         }
@@ -70,11 +83,16 @@ export async function findApiSinks(code: string): Promise<ApiSink[]> {
           if (validMethods.includes(axiosMethod) && node.arguments.length >= 1) {
             const possibleUrls = resolveAllPossibleStrings(node.arguments[0], path.get("arguments.0"));
             if (possibleUrls.length > 0) {
+              let body: Record<string, string> | undefined;
+              if (node.arguments.length >= 2 && node.arguments[1].type === "ObjectExpression") {
+                  body = inferSchema(node.arguments[1]);
+              }
               sinks.push({ 
                 url: possibleUrls[0], 
                 method: axiosMethod.toUpperCase(), 
                 loc: node.loc?.start,
-                possibleUrls: possibleUrls.length > 1 ? possibleUrls : undefined
+                possibleUrls: possibleUrls.length > 1 ? possibleUrls : undefined,
+                body
               });
             }
           }
@@ -100,6 +118,12 @@ export async function findApiSinks(code: string): Promise<ApiSink[]> {
               p.key.type === "Identifier" &&
               p.key.name === "method"
           );
+          const dataProp = config.properties.find(
+            (p) =>
+              p.type === "ObjectProperty" &&
+              p.key.type === "Identifier" &&
+              p.key.name === "data"
+          );
 
           if (urlProp && urlProp.type === "ObjectProperty") {
             const possibleUrls = resolveAllPossibleStrings(urlProp.value, path.get("arguments.0"));
@@ -109,11 +133,16 @@ export async function findApiSinks(code: string): Promise<ApiSink[]> {
                 const m = resolveString(methodProp.value, path.get("arguments.0"));
                 if (m !== null) method = m.toUpperCase();
               }
+              let body: Record<string, string> | undefined;
+              if (dataProp && dataProp.type === "ObjectProperty") {
+                  body = inferSchema(dataProp.value);
+              }
               sinks.push({ 
                 url: possibleUrls[0], 
                 method, 
                 loc: node.loc?.start,
-                possibleUrls: possibleUrls.length > 1 ? possibleUrls : undefined
+                possibleUrls: possibleUrls.length > 1 ? possibleUrls : undefined,
+                body
               });
             }
           }
@@ -125,6 +154,45 @@ export async function findApiSinks(code: string): Promise<ApiSink[]> {
   }
 
   return sinks;
+}
+
+/**
+ * Infers a simple JSON schema (key: type) from a Babel node representing a request body.
+ */
+function inferSchema(node: any): Record<string, string> | undefined {
+  let objectNode = node;
+
+  // Handle JSON.stringify({ ... })
+  if (
+    node.type === "CallExpression" &&
+    node.callee.type === "MemberExpression" &&
+    node.callee.object.type === "Identifier" &&
+    node.callee.object.name === "JSON" &&
+    node.callee.property.type === "Identifier" &&
+    node.callee.property.name === "stringify" &&
+    node.arguments.length >= 1
+  ) {
+    objectNode = node.arguments[0];
+  }
+
+  if (objectNode.type === "ObjectExpression") {
+    const schema: Record<string, string> = {};
+    for (const prop of objectNode.properties) {
+      if (prop.type === "ObjectProperty" && prop.key.type === "Identifier") {
+        let type = "any";
+        if (prop.value.type === "StringLiteral") type = "string";
+        else if (prop.value.type === "NumericLiteral") type = "number";
+        else if (prop.value.type === "BooleanLiteral") type = "boolean";
+        else if (prop.value.type === "ObjectExpression") type = "object";
+        else if (prop.value.type === "ArrayExpression") type = "array";
+        
+        schema[prop.key.name] = type;
+      }
+    }
+    return schema;
+  }
+
+  return undefined;
 }
 
 /**
