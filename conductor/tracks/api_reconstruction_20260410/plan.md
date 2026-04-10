@@ -52,7 +52,7 @@
     - [ ] Create a new "API Explorer" tab in the web interface.
 - [x] Task: Route-to-Source Linking (37592d7)
     - [ ] Enable clicking an API route to jump to the code that calls it.
-- [ ] Task: Attack Surface Highlighting
+- [x] Task: Attack Surface Highlighting (4a3656c)
     - [ ] Visually flag "sensitive" or "hidden" endpoints in the UI.
 - [ ] Task: Download Export
     - [ ] Add a button to download the generated OpenAPI specification.
