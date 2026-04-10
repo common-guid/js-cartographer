@@ -19,9 +19,9 @@
 ### Objective: Resolve complex dynamic URLs and identify "hidden" query/body parameters.
 
 - [ ] Task: LLM-Augmented Route Analysis
-    - [ ] Use the LLM to analyze complex URL construction logic that static analysis misses.
+    - [ ] Use the LLM to analyze complex URL construction logic that static analysis misses (e.g., `const url = [base, path, id].join("/")`).
 - [ ] Task: Query Parameter Scanner
-    - [ ] Scan for assignment/concatenation patterns for query strings.
+    - [ ] Scan for assignment/concatenation patterns for query strings (e.g., `?debug=true`, `?admin=1`).
 - [ ] Task: Conditional Parameter Detection
     - [ ] Identify parameters that are only added based on specific conditions or state.
 - [ ] Task: Request Body Extraction
