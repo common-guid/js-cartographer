@@ -18,7 +18,7 @@
 ## Phase 2: Advanced Parameter Discovery
 ### Objective: Resolve complex dynamic URLs and identify "hidden" query/body parameters.
 
-- [ ] Task: LLM-Augmented Route Analysis
+- [x] Task: LLM-Augmented Route Analysis (3ac6b7a)
     - [ ] Use the LLM to analyze complex URL construction logic that static analysis misses (e.g., `const url = [base, path, id].join("/")`).
 - [ ] Task: Query Parameter Scanner
     - [ ] Scan for assignment/concatenation patterns for query strings (e.g., `?debug=true`, `?admin=1`).
