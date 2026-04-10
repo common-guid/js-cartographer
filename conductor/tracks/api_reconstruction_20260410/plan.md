@@ -48,7 +48,7 @@
 ## Phase 4: Explorer Integration & Reporting
 ### Objective: Visualize the discovered API surface in the Interactive Web-based Explorer.
 
-- [ ] Task: API Surface View
+- [x] Task: API Surface View (37592d7)
     - [ ] Create a new "API Explorer" tab in the web interface.
 - [ ] Task: Route-to-Source Linking
     - [ ] Enable clicking an API route to jump to the code that calls it.
