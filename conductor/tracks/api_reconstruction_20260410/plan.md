@@ -3,7 +3,7 @@
 ## Phase 1: Core Route Synthesis
 ### Objective: Identify all statically-defined and simple dynamic API routes.
 
-- [ ] Task: Framework Heuristics Extension
+- [x] Task: Framework Heuristics Extension (b45545d)
     - [ ] Update the `framework-detector` to identify common routing libraries (`react-router`, `vue-router`, etc.).
 - [ ] Task: API Sink Discovery
     - [ ] Create a new analyzer to find all calls to `fetch`, `axios`, `XHR`, and other HTTP-related libraries.
