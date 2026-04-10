@@ -58,4 +58,13 @@ describe("sink-discovery", () => {
     const baseUrl = inferBaseUrl(sinks);
     assert.strictEqual(baseUrl, "https://api.example.com/v1");
   });
+
+  it("extracts query parameters", async () => {
+    const code = "fetch('/api/users?debug=true&admin=1');";
+    const sinks = await findApiSinks(code);
+    assert.strictEqual(sinks.length, 1);
+    const { extractQueryParams } = await import("./sink-discovery.js");
+    const params = extractQueryParams(sinks[0].url);
+    assert.deepStrictEqual(params, { debug: "true", admin: "1" });
+  });
 });

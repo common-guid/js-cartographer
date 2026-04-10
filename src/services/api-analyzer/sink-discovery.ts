@@ -151,6 +151,24 @@ export function inferBaseUrl(sinks: ApiSink[]): string | null {
   return prefix || null;
 }
 
+/**
+ * Extracts query parameters from a URL string.
+ */
+export function extractQueryParams(url: string): Record<string, string> {
+  const params: Record<string, string> = {};
+  const queryString = url.split("?")[1];
+  if (!queryString) return params;
+
+  const pairs = queryString.split("&");
+  for (const pair of pairs) {
+    const [key, value] = pair.split("=");
+    if (key) {
+      params[decodeURIComponent(key)] = decodeURIComponent(value || "");
+    }
+  }
+  return params;
+}
+
 function resolveString(node: any, path?: any): string | null {
   if (node.type === "StringLiteral") {
     return node.value;
