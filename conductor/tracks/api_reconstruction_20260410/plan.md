@@ -7,7 +7,7 @@
     - [ ] Update the `framework-detector` to identify common routing libraries (`react-router`, `vue-router`, etc.).
 - [x] Task: API Sink Discovery (c377428)
     - [ ] Create a new analyzer to find all calls to `fetch`, `axios`, `XHR`, and other HTTP-related libraries.
-- [ ] Task: Basic String Resolution
+- [x] Task: Basic String Resolution (12ef885)
     - [ ] Implement a Babel plugin to statically resolve simple string template literals and concatenations for URL arguments.
 - [ ] Task: Base URL Normalization
     - [ ] Develop a heuristic to detect common API base paths (e.g., `/api/v1`, `https://api.example.com`).
