@@ -48,4 +48,14 @@ describe("sink-discovery", () => {
     assert.strictEqual(sinks.length, 1);
     assert.strictEqual(sinks[0].url, "/api/users");
   });
+
+  it("identifies common base URLs", async () => {
+    const code = "fetch('https://api.example.com/v1/users'); fetch('https://api.example.com/v1/posts');";
+    const sinks = await findApiSinks(code);
+    assert.strictEqual(sinks.length, 2);
+    // This is more about a separate utility or post-processing
+    const { inferBaseUrl } = await import("./sink-discovery.js");
+    const baseUrl = inferBaseUrl(sinks);
+    assert.strictEqual(baseUrl, "https://api.example.com/v1");
+  });
 });

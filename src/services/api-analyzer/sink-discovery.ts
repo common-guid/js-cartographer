@@ -111,6 +111,46 @@ export async function findApiSinks(code: string): Promise<ApiSink[]> {
   return sinks;
 }
 
+/**
+ * Infers the most likely base URL from a set of discovered API sinks.
+ * It finds the longest common prefix that looks like a base path.
+ */
+export function inferBaseUrl(sinks: ApiSink[]): string | null {
+  if (sinks.length === 0) return null;
+
+  const urls = sinks.map((s) => s.url).filter((u) => u.startsWith("http") || u.startsWith("/"));
+  if (urls.length === 0) return null;
+
+  // Start with the first URL as a candidate
+  let prefix = urls[0];
+
+  for (let i = 1; i < urls.length; i++) {
+    while (!urls[i].startsWith(prefix) && prefix.length > 0) {
+      prefix = prefix.substring(0, prefix.length - 1);
+    }
+  }
+
+  // Clean up: remove trailing slashes
+  if (prefix.endsWith("/")) {
+    prefix = prefix.substring(0, prefix.length - 1);
+  }
+
+  // Further refinement: common API bases often end with /api, /v1, /v2, etc.
+  // We'll trim the prefix to the last segment boundary if it's not a known base.
+  const segments = prefix.split("/");
+  if (segments.length > 1) {
+    const lastSegment = segments[segments.length - 1];
+    const commonBases = ["api", "v1", "v2", "v3", "rest", "graphql"];
+    if (!commonBases.includes(lastSegment.toLowerCase()) && !lastSegment.includes(".")) {
+      // If the last segment isn't a known base keyword, it might be a resource (like /users)
+      // so we trim it to the previous segment.
+      prefix = segments.slice(0, -1).join("/");
+    }
+  }
+
+  return prefix || null;
+}
+
 function resolveString(node: any, path?: any): string | null {
   if (node.type === "StringLiteral") {
     return node.value;
