@@ -24,7 +24,7 @@
     - [ ] Scan for assignment/concatenation patterns for query strings (e.g., `?debug=true`, `?admin=1`).
 - [x] Task: Conditional Parameter Detection (236d7b0)
     - [ ] Identify parameters that are only added based on specific conditions or state.
-- [ ] Task: Request Body Extraction
+- [x] Task: Request Body Extraction (21ee12b)
     - [ ] Analyze `body` or `data` arguments in `fetch`/`axios` calls to infer the JSON schema of POST/PUT requests.
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Advanced Parameter Discovery' (Protocol in workflow.md)
 
