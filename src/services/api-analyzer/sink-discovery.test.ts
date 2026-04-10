@@ -67,4 +67,18 @@ describe("sink-discovery", () => {
     const params = extractQueryParams(sinks[0].url);
     assert.deepStrictEqual(params, { debug: "true", admin: "1" });
   });
+
+  it("finds conditional parameters", async () => {
+    const code = `
+      let url = '/api/users';
+      if (isAdmin) {
+        url = '/api/users?admin=true';
+      }
+      fetch(url);
+    `;
+    const sinks = await findApiSinks(code);
+    assert.strictEqual(sinks.length, 1);
+    assert.ok(sinks[0].possibleUrls?.includes('/api/users'));
+    assert.ok(sinks[0].possibleUrls?.includes('/api/users?admin=true'));
+  });
 });

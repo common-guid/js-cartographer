@@ -13,6 +13,7 @@ export interface ApiSink {
   url: string;
   method: string;
   loc?: { line: number; column: number };
+  possibleUrls?: string[];
 }
 
 export async function findApiSinks(code: string): Promise<ApiSink[]> {
@@ -32,8 +33,8 @@ export async function findApiSinks(code: string): Promise<ApiSink[]> {
           node.callee.name === "fetch" &&
           node.arguments.length >= 1
         ) {
-          const url = resolveString(node.arguments[0]);
-          if (url !== null) {
+          const possibleUrls = resolveAllPossibleStrings(node.arguments[0], path.get("arguments.0"));
+          if (possibleUrls.length > 0) {
             let method = "GET";
             if (node.arguments.length >= 2 && node.arguments[1].type === "ObjectExpression") {
               const options = node.arguments[1] as ObjectExpression;
@@ -44,11 +45,16 @@ export async function findApiSinks(code: string): Promise<ApiSink[]> {
                   p.key.name === "method"
               );
               if (methodProp && methodProp.type === "ObjectProperty") {
-                const m = resolveString(methodProp.value);
+                const m = resolveString(methodProp.value, path.get("arguments.1"));
                 if (m !== null) method = m.toUpperCase();
               }
             }
-            sinks.push({ url, method, loc: node.loc?.start });
+            sinks.push({ 
+              url: possibleUrls[0], 
+              method, 
+              loc: node.loc?.start,
+              possibleUrls: possibleUrls.length > 1 ? possibleUrls : undefined
+            });
           }
         }
 
@@ -62,9 +68,14 @@ export async function findApiSinks(code: string): Promise<ApiSink[]> {
           const axiosMethod = node.callee.property.name.toLowerCase();
           const validMethods = ["get", "post", "put", "delete", "patch", "head", "options"];
           if (validMethods.includes(axiosMethod) && node.arguments.length >= 1) {
-            const url = resolveString(node.arguments[0]);
-            if (url !== null) {
-              sinks.push({ url, method: axiosMethod.toUpperCase(), loc: node.loc?.start });
+            const possibleUrls = resolveAllPossibleStrings(node.arguments[0], path.get("arguments.0"));
+            if (possibleUrls.length > 0) {
+              sinks.push({ 
+                url: possibleUrls[0], 
+                method: axiosMethod.toUpperCase(), 
+                loc: node.loc?.start,
+                possibleUrls: possibleUrls.length > 1 ? possibleUrls : undefined
+              });
             }
           }
         }
@@ -91,14 +102,19 @@ export async function findApiSinks(code: string): Promise<ApiSink[]> {
           );
 
           if (urlProp && urlProp.type === "ObjectProperty") {
-            const url = resolveString(urlProp.value, path.get("arguments.0.properties") as any); // Simplified path
-            if (url !== null) {
+            const possibleUrls = resolveAllPossibleStrings(urlProp.value, path.get("arguments.0"));
+            if (possibleUrls.length > 0) {
               let method = "GET";
               if (methodProp && methodProp.type === "ObjectProperty") {
-                const m = resolveString(methodProp.value, path.get("arguments.0.properties") as any);
+                const m = resolveString(methodProp.value, path.get("arguments.0"));
                 if (m !== null) method = m.toUpperCase();
               }
-              sinks.push({ url, method, loc: node.loc?.start });
+              sinks.push({ 
+                url: possibleUrls[0], 
+                method, 
+                loc: node.loc?.start,
+                possibleUrls: possibleUrls.length > 1 ? possibleUrls : undefined
+              });
             }
           }
         }
@@ -174,10 +190,19 @@ function resolveString(node: any, path?: any): string | null {
     return node.value;
   }
 
+  // Handle variable tracking: fetch(url) where url is defined earlier
+  if (node.type === "Identifier" && path) {
+    const binding = path.scope.getBinding(node.name);
+    if (binding) {
+      // If we find multiple assignments, we can't return a single string
+      // but we can maybe return the first one or signal multiple
+    }
+  }
+
   // Handle simple concatenation: 'a' + 'b'
   if (node.type === "BinaryExpression" && node.operator === "+") {
-    const left = resolveString(node.left);
-    const right = resolveString(node.right);
+    const left = resolveString(node.left, path);
+    const right = resolveString(node.right, path);
     if (left !== null && right !== null) {
       return left + right;
     }
@@ -189,7 +214,7 @@ function resolveString(node: any, path?: any): string | null {
     for (let i = 0; i < node.quasis.length; i++) {
       result += node.quasis[i].value.cooked || "";
       if (i < node.expressions.length) {
-        const expr = resolveString(node.expressions[i]);
+        const expr = resolveString(node.expressions[i], path);
         if (expr === null) return null; // Can't resolve part of it
         result += expr;
       }
@@ -198,4 +223,42 @@ function resolveString(node: any, path?: any): string | null {
   }
 
   return null;
+}
+
+/**
+ * Resolves all possible string values for a given node by tracking assignments.
+ */
+function resolveAllPossibleStrings(node: any, path: any): string[] {
+  if (node.type === "StringLiteral") {
+    return [node.value];
+  }
+
+  if (node.type === "Identifier") {
+    const binding = path.scope.getBinding(node.name);
+    if (binding) {
+      const values: string[] = [];
+      
+      // Check initial value
+      if (binding.path.isVariableDeclarator()) {
+          const init = binding.path.get("init");
+          if (init.node) {
+              const resolved = resolveAllPossibleStrings(init.node, init);
+              values.push(...resolved);
+          }
+      }
+
+      // Check constant violations (re-assignments)
+      for (const violationPath of binding.constantViolations) {
+        if (violationPath.isAssignmentExpression()) {
+          const right = violationPath.get("right");
+          const resolved = resolveAllPossibleStrings(right.node, right);
+          values.push(...resolved);
+        }
+      }
+      return Array.from(new Set(values));
+    }
+  }
+
+  const single = resolveString(node, path);
+  return single ? [single] : [];
 }
