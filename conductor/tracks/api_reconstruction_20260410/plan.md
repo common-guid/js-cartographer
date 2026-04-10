@@ -26,7 +26,7 @@
     - [ ] Identify parameters that are only added based on specific conditions or state.
 - [x] Task: Request Body Extraction (21ee12b)
     - [ ] Analyze `body` or `data` arguments in `fetch`/`axios` calls to infer the JSON schema of POST/PUT requests.
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Advanced Parameter Discovery' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Advanced Parameter Discovery' (Protocol in workflow.md)
 
 ---
 
