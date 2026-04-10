@@ -6,35 +6,50 @@ import { ApiSurface, ApiEndpoint, ApiParameter } from "./types.js";
  */
 export function buildApiSurface(sinks: ApiSink[]): ApiSurface {
   const baseUrl = inferBaseUrl(sinks) || undefined;
-  const endpoints: ApiEndpoint[] = [];
+  const endpointMap = new Map<string, ApiEndpoint>();
 
   for (const sink of sinks) {
     const rawUrl = sink.url;
     const path = rawUrl.split("?")[0];
-    const queryParams: ApiParameter[] = [];
-    
+    const method = sink.method.toUpperCase();
+    const key = `${method} ${path}`;
+
     const params = extractQueryParams(rawUrl);
-    for (const [name, value] of Object.entries(params)) {
-      queryParams.push({
-        name,
-        type: inferValueType(value),
-        required: true // Heuristic: if it's in the URL, it's likely required
+    const queryParams: ApiParameter[] = Object.entries(params).map(([name, value]) => ({
+      name,
+      type: inferValueType(value),
+      required: true
+    }));
+
+    if (endpointMap.has(key)) {
+      const existing = endpointMap.get(key)!;
+      // Merge query params
+      if (queryParams.length > 0) {
+        if (!existing.queryParams) existing.queryParams = [];
+        for (const p of queryParams) {
+          if (!existing.queryParams.find((ep) => ep.name === p.name)) {
+            existing.queryParams.push(p);
+          }
+        }
+      }
+      // Merge body schemas (simple overwrite for now or merge keys)
+      if (sink.body) {
+        if (!existing.requestBody) existing.requestBody = {};
+        Object.assign(existing.requestBody, sink.body);
+      }
+    } else {
+      endpointMap.set(key, {
+        path,
+        method,
+        queryParams: queryParams.length > 0 ? queryParams : undefined,
+        requestBody: sink.body,
       });
     }
-
-    endpoints.push({
-      path,
-      method: sink.method,
-      queryParams: queryParams.length > 0 ? queryParams : undefined,
-      requestBody: sink.body,
-      // For source locations, we'll need to know which file the sink came from.
-      // Current ApiSink only has line/col.
-    });
   }
 
   return {
     baseUrl,
-    endpoints
+    endpoints: Array.from(endpointMap.values())
   };
 }
 
