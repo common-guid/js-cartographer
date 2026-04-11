@@ -1,6 +1,6 @@
 import path from 'node:path';
 import fs from 'node:fs';
-import { unminify } from '../../src/unminify.js';
+import { unminify, DEFAULT_FILE_CONCURRENCY } from '../../src/unminify.js';
 import { WakaruSanitizer } from '../../src/services/sanitizer/index.js';
 import babel from '../../src/plugins/babel/babel.js';
 import prettier from '../../src/plugins/prettier.js';
@@ -61,7 +61,7 @@ async function run() {
     }
     fs.mkdirSync(outputDir, { recursive: true });
 
-    await unminify(input, outputDir, plugins, sanitizer);
+    await unminify(input, outputDir, plugins, sanitizer, DEFAULT_FILE_CONCURRENCY);
   }
 
   console.log('\n[QUALITY] Calculating Source Map Recovery Score...');
