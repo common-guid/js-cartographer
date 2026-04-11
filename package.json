@@ -50,8 +50,8 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "@babel/core": "^7.25.2",
-    "@babel/parser": "^7.29.0",
+    "@babel/core": "^7.29.0",
+    "@babel/parser": "^7.29.2",
     "@babel/traverse": "^7.29.0",
     "@babel/types": "^7.25.2",
     "@google/generative-ai": "^0.24.0",
@@ -67,7 +67,7 @@
     "node-llama-cpp": "^3.0.0-beta.40",
     "open": "^11.0.0",
     "openai": "^4.55.1",
-    "prettier": "^3.8.1",
+    "prettier": "^3.8.2",
     "tsx": "^4.16.2",
     "typescript": "^5.5.4",
     "webcrack": "^2.13.0"

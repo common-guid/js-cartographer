@@ -566,7 +566,7 @@ npm run lint:eslint    # ESLint only
 
 The `fixtures/webpack-hello-world/` directory is the canonical end-to-end validation target. It contains:
 
-- **`src/`** — four human-readable source files: `math.js`, `greeting.js`, `api.js`, `app.js`. These are the **ground truth** for evaluating output quality.
+- **`src/`** — four human-readable source files: `tasks.js`, `storage.js`, `filters.js`, `app.js`. These are the **ground truth** for evaluating output quality.
 - **`dist/bundle.js`** — a pre-built Webpack 5 + Babel (IE11 target) bundle that exercises: async/await (generator transpilation), ES6 classes (prototype transpilation), cross-file imports, and named functions.
 
 To validate the full pipeline against the fixture:
@@ -615,21 +615,21 @@ Comprehensive test suite additions to improve coverage and reduce blind spots.
 - [x] Call graph import variants test (alias, default, namespace, CJS) — added to `src/services/callgraph/index.test.ts`
 
 #### Additional comprehensive tests
-- [ ] Call graph node types coverage (arrow functions, expressions, class methods)
-- [ ] Call graph duplicate edge suppression
-- [ ] Graph builder import normalization test
-- [ ] `GraphPresenter.toMermaid` depth/entry tests
-- [ ] `graph` command failure-path E2E tests
-- [ ] `explore` command tests (`--no-open`, invalid port, startup/shutdown)
-- [ ] Explorer server negative-path tests (missing files, malformed JSON, large reads)
-- [ ] Explorer frontend transform unit tests (layout, edge dedup, dangling edges)
-- [ ] Explorer store state-machine tests (history, transitions, error fallback)
-- [ ] Sanitizer fallback tests (Prettier/Wakaru failure resilience)
-- [ ] Input validation unit tests for utilities (number-utils, file-utils, env, url)
-- [ ] Download/model management tests (unknown model, already downloaded, async completion)
-- [ ] Provider prompt-shape tests (OpenAI, OpenRouter, Gemini framework injection)
-- [ ] `unminify` pipeline ordering test (webcrack → graph → sanitizer → plugins → callgraph)
-- [ ] Doc/fixture consistency test (fixture README references existing files)
+- [ ] Call graph node types coverage (arrow functions, expressions, class methods) (TODO: functionality currently missing)
+- [ ] Call graph duplicate edge suppression (TODO: functionality currently missing)
+- [ ] Graph builder import normalization test (TODO: functionality currently missing)
+- [x] `GraphPresenter.toMermaid` depth/entry tests
+- [x] `graph` command failure-path E2E tests
+- [x] `explore` command tests (`--no-open`, invalid port, startup/shutdown)
+- [x] Explorer server negative-path tests (missing files, malformed JSON, large reads)
+- [x] Explorer frontend transform unit tests (layout, edge dedup, dangling edges)
+- [x] Explorer store state-machine tests (history, transitions, error fallback)
+- [x] Sanitizer fallback tests (Prettier/Wakaru failure resilience)
+- [x] Input validation unit tests for utilities (number-utils, file-utils, env, url)
+- [x] Download/model management tests (unknown model, already downloaded, async completion)
+- [x] Provider prompt-shape tests (OpenAI, OpenRouter, Gemini framework injection)
+- [x] `unminify` pipeline ordering test (webcrack → graph → sanitizer → plugins → callgraph)
+- [x] Doc/fixture consistency test (fixture README references existing files)
 
 ---
 
