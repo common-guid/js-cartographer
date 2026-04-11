@@ -9,10 +9,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [x] **Track: Framework-Aware Context & Heuristics**
-  *Link: [./tracks/framework_heuristics_20260410/](./tracks/framework_heuristics_20260410/)*
-
----
-
 - [ ] **Track: Automated "Taint-to-Sink" Mapping via LLM-Augmented Data Flow**
   *Link: [./tracks/taint_mapping_20260410/](./tracks/taint_mapping_20260410/)*
