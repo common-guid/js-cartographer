@@ -4,7 +4,7 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Interactive Web-based Explorer**
+- [x] **Track: Interactive Web-based Explorer**
   *Link: [./tracks/web_explorer_20260410/](./tracks/web_explorer_20260410/)*
 
 ---
