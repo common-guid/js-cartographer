@@ -32,10 +32,19 @@ export function buildApiSurface(sinks: ApiSink[]): ApiSurface {
           }
         }
       }
-      // Merge body schemas (simple overwrite for now or merge keys)
+      // Merge body schemas
       if (sink.body) {
         if (!existing.requestBody) existing.requestBody = {};
         Object.assign(existing.requestBody, sink.body);
+      }
+      // Add source location
+      if ((sink as any).file && sink.loc) {
+        if (!existing.sourceLocations) existing.sourceLocations = [];
+        existing.sourceLocations.push({
+          file: (sink as any).file,
+          line: sink.loc.line,
+          column: sink.loc.column
+        });
       }
     } else {
       endpointMap.set(key, {
@@ -43,6 +52,11 @@ export function buildApiSurface(sinks: ApiSink[]): ApiSurface {
         method,
         queryParams: queryParams.length > 0 ? queryParams : undefined,
         requestBody: sink.body,
+        sourceLocations: (sink as any).file && sink.loc ? [{
+          file: (sink as any).file,
+          line: sink.loc.line,
+          column: sink.loc.column
+        }] : undefined
       });
     }
   }
