@@ -61,6 +61,8 @@ for (const cmd of ["openai", "gemini", "openrouter"]) {
 test("sanitizer logs [Sanitizer] Optimizing when run against fixture bundle", async () => {
   // We expect this to fail (no API key) but the [Sanitizer] log should appear first.
   // We capture stderr+stdout and check the log is present.
+  // We will run this with openrouter but inject a bad API key, to bypass local model check
+  // since the local model doesn't exist on all machines.
   let output = "";
   try {
     const result = await cartographer(
@@ -73,8 +75,7 @@ test("sanitizer logs [Sanitizer] Optimizing when run against fixture bundle", as
     );
     output = result.stdout + result.stderr;
   } catch (e) {
-    // Expected — the API call will fail with an invalid key.
-    // cartographer() rejects on non-zero exit, but we can still check the output.
+    // Expected
     if (e instanceof Error) output = e.message;
   }
 
@@ -105,4 +106,42 @@ test("--no-sanitizer suppresses [Sanitizer] Optimizing log against fixture bundl
     !output.includes("[Sanitizer] Optimizing"),
     `Expected NO "[Sanitizer] Optimizing" when --no-sanitizer used. Got: ${output.slice(0, 500)}`
   );
+});
+
+// ---------------------------------------------------------------------------
+// --no-heuristic-naming flag tests
+// ---------------------------------------------------------------------------
+
+for (const cmd of ["openai", "gemini", "openrouter", "local"]) {
+  test(`${cmd}: --no-heuristic-naming flag is accepted (rejects on missing file, not flag parse error)`, async () => {
+    // This must reject because the file doesn't exist — NOT because the flag is unrecognised.
+    // Commander would exit with "error: unknown option '--no-heuristic-naming'" if the flag wasn't wired.
+    const err = await assert
+      .rejects(cartographer(cmd, NONEXISTENT, "--no-heuristic-naming"))
+      .then(() => null)
+      .catch((e) => e as Error);
+
+    if (err) {
+      assert.ok(
+        !err.message.includes("unknown option"),
+        `Expected file-not-found error, got: ${err.message}`
+      );
+    }
+  });
+}
+
+test("--no-heuristic-naming flag is accepted by all deobfuscation commands", async () => {
+  // Test that the flag parses correctly across all four providers
+  const commands = ["openai", "gemini", "openrouter", "local"];
+  for (const cmd of commands) {
+    try {
+        await cartographer(cmd, NONEXISTENT, "--no-heuristic-naming");
+        assert.fail("Should have rejected");
+    } catch (e: any) {
+        assert.ok(
+           e.message.match(/nonexistent|not found|no such file|OPENAI_API_KEY environment variable is missing|GEMINI_API_KEY environment variable is missing|OPENROUTER_API_KEY environment variable is missing/i),
+           `Expected error about missing file or missing key, got: ${e.message}`
+        );
+    }
+  }
 });

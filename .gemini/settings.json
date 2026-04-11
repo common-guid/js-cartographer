@@ -136,6 +136,20 @@
     ]
   },
   "hooksConfig": {
-    "enabled": true
+    "enabled": true,
+    "disabled": [
+      "entire-before-tool",
+      "entire-after-tool",
+      "entire-before-agent",
+      "entire-after-agent",
+      "entire-notification",
+      "entire-session-start",
+      "entire-session-end-exit",
+      "entire-session-end-logout",
+      "entire-pre-compress",
+      "entire-before-model",
+      "entire-after-model",
+      "entire-before-tool-selection"
+    ]
   }
 }

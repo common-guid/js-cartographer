@@ -50,8 +50,8 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "@babel/core": "^7.25.2",
-    "@babel/parser": "^7.29.0",
+    "@babel/core": "^7.29.0",
+    "@babel/parser": "^7.29.2",
     "@babel/traverse": "^7.29.0",
     "@babel/types": "^7.25.2",
     "@google/generative-ai": "^0.24.0",
@@ -62,21 +62,28 @@
     "babel-plugin-transform-beautifier": "^0.1.0",
     "commander": "^13.0.0",
     "dotenv": "^16.4.5",
+    "express": "^5.2.1",
     "ipull": "^3.9.0",
     "node-llama-cpp": "^3.0.0-beta.40",
+    "open": "^11.0.0",
     "openai": "^4.55.1",
-    "prettier": "^3.8.1",
+    "prettier": "^3.8.2",
     "tsx": "^4.16.2",
     "typescript": "^5.5.4",
     "webcrack": "^2.13.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.8.0",
+    "@inquirer/prompts": "^8.3.2",
+    "@types/diff": "^7.0.2",
+    "@types/express": "^5.0.6",
     "@types/node": "^22.0.0",
+    "diff": "^8.0.4",
     "eslint": "^9.8.0",
     "eslint-plugin-unused-imports": "^4.1.2",
     "globals": "^16.0.0",
     "pkgroll": "^2.4.2",
+    "source-map": "^0.7.6",
     "typescript-eslint": "^8.0.0"
   }
 }

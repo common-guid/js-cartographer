@@ -7,8 +7,9 @@ import { cli } from "./cli.js";
 import { azure } from "./commands/gemini.js";
 import { openrouter } from "./commands/openrouter.js";
 import { graph } from "./commands/graph.js";
+import { explore } from "./commands/explore.js";
 
-cli()
+await cli()
   .name("cartographer")
   .description("Unminify code using OpenAI's API or a local LLM")
   .version(version)
@@ -18,4 +19,5 @@ cli()
   .addCommand(openrouter)
   .addCommand(download())
   .addCommand(graph)
-  .parse(process.argv);
+  .addCommand(explore)
+  .parseAsync(process.argv);

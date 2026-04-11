@@ -16,6 +16,7 @@ JS Cartographer combines Wakaru's static analysis, AST-level transpilation recov
   - [Local Mode](#local-mode)
   - [Pipeline Options](#pipeline-options)
   - [Graph Visualization](#graph-visualization)
+  - [Web Explorer](#web-explorer)
   - [All CLI Options](#all-cli-options)
 - [Output Files](#output-files)
 - [Project Structure](#project-structure)
@@ -73,6 +74,30 @@ Output directory: recovered source files + graph artifacts
 
 LLMs in this pipeline are used for naming, while structural restoration is handled by AST transforms. That separation is what keeps output readable without sacrificing semantic stability.
 
+### Framework-Aware Context & Heuristics
+
+One of the highest-leverage enhancements to JS Cartographer is **automatic framework detection** and context injection. Modern bundles are shaped by their frameworks — React, Express, Vue, etc. — but the LLM renamer has no way to know this from obfuscated code alone. The framework-heuristics track solves this:
+
+1. **Deterministic detection** — A single Babel AST pass per file looks for telltale patterns:
+   - `import/require('react')`, JSX syntax, `React.createElement()` → React
+   - `import/require('express')` → Express.js
+   - Additional frameworks can be trivially added
+
+2. **Zero-cost** — Detection runs once per file during transpilation; no LLM calls.
+
+3. **Prompt augmentation** — Once a framework is detected, the LLM's system prompt is conditionally enriched with framework-specific "Standard Operating Procedures." For React, this includes:
+   - Hook variable destructuring: `useState` returns `[state, setState]`
+   - Component names: capitalized and often suffixed with `Component`
+   - JSX fragment names and element-holding variables
+
+   For Express, this includes middleware patterns, request/response handler conventions, route builder idioms, etc.
+
+4. **Idiiomatic output** — The LLM produces names that *feel* native to the framework, dramatically reducing the "generated code" impression. A React hook variable is instantly recognizable as `useAuth`, not `getRenamedVar42`.
+
+5. **No false positives** — Files with no detected framework use the generic prompt; detection is purely additive.
+
+This approach makes the LLM's job easier (smaller decision space, clearer conventions), produces more maintainable names, and keeps the pipeline's determinism intact. Framework detection is pluggable, so new frameworks and domain-specific patterns can be added without changing core logic.
+
 ---
 
 ## Features
@@ -85,8 +110,10 @@ LLMs in this pipeline are used for naming, while structural restoration is handl
   - Optional chaining, nullish coalescing, template literals
   - Sequence expression splitting (vital for LLM comprehension)
 - **Heuristic naming**: Deterministically renames `void 0` → `undefined`, normalizes DOM/Node.js API usage patterns, and reduces LLM token costs with character-savings metrics
+- **Framework-aware context**: Automatically detects framework fingerprints (React hooks, JSX, Express middleware patterns) and injects framework-specific naming conventions into the LLM prompt. This dramatically improves identifier quality by teaching the LLM idiomatic patterns (e.g., `useState` hook destructuring as `[state, setState]`, React component names capitalized, Express routes as `(req, res, next) => {}`) without polluting the generic prompt for non-framework code. Detection is deterministic and cost-free.
 - **Module dependency graph**: Writes `module-graph.json` mapping all `import`/`require` relationships across the unbundled project
 - **Semantic call graph**: Writes `call-graph.json` indexing every function definition and call edge (internal and cross-file)
+- **Interactive Web Explorer**: A browser-based UI for exploring the deobfuscated codebase, dependency graph, and call graph in an integrated "Map and Territory" view.
 - **Graph visualization**: `cartographer graph` sub-command renders the call graph as a depth-limited ASCII tree or Mermaid flowchart
 - **Webpack bundle support**: Powered by `webcrack` for automatic bundle extraction
 - **Safety-first pipeline**: Each transformation stage wraps errors independently — a failing Wakaru rule or Prettier pass never aborts the entire run
@@ -286,6 +313,40 @@ Tree mode is best for tracing one execution path. Mermaid mode is best for shari
 
 ---
 
+### Web Explorer
+
+The Web Explorer is an interactive browser-based interface for navigating your deobfuscated project. It provides an integrated view of the "Map" (dependency and call graphs) and the "Territory" (the recovered source code).
+
+#### How It Works
+
+The explorer starts a local Express server that:
+1. **API Server**: Serves the `module-graph.json` and `call-graph.json` files as well as the deobfuscated source code.
+2. **Frontend**: Serves a React-based single-page application built with React Flow for interactive graph visualization.
+3. **Integration**: Selecting a file or function in the graph automatically opens and highlights the corresponding source code in the code pane.
+
+#### How to Start and Use
+
+After running a deobfuscation command (e.g., `openai` or `local`), you can launch the explorer pointing to your output directory:
+
+```shell
+npm start -- explore ./output
+```
+
+**Options:**
+- `-p, --port <number>`: Change the default port (default: `3000`)
+- `--no-open`: Start the server without automatically opening your browser
+
+```shell
+# Use a custom port
+npm start -- explore ./output --port 8080
+
+# Start without opening browser
+npm start -- explore ./output --no-open
+```
+
+
+---
+
 ### All CLI Options
 
 ```text
@@ -298,6 +359,7 @@ Commands:
   openrouter  Use OpenRouter's API to unminify code
   download    Download supported local models (subcommands: 2b, 8b)
   graph       Visualize the call graph of a deobfuscated project
+  explore     Launch an interactive web-based explorer for a deobfuscated project
 
 Shared deobfuscation options (local | openai | gemini | openrouter):
   -m, --model <model>           Model name
@@ -319,6 +381,10 @@ graph options:
   -e, --entry <id>              Function ID to trace, e.g. "src/main.js:init"
   -d, --depth <n>               Maximum depth to traverse
   -f, --format <type>           Output format: tree (default) or mermaid
+
+explore options:
+  -p, --port <number>           Port to listen on                  [default: 3000]
+  --no-open                     Do not automatically open the browser
 ```
 
 For exact options in your current branch, use:
@@ -500,7 +566,7 @@ npm run lint:eslint    # ESLint only
 
 The `fixtures/webpack-hello-world/` directory is the canonical end-to-end validation target. It contains:
 
-- **`src/`** — four human-readable source files: `math.js`, `greeting.js`, `api.js`, `app.js`. These are the **ground truth** for evaluating output quality.
+- **`src/`** — four human-readable source files: `tasks.js`, `storage.js`, `filters.js`, `app.js`. These are the **ground truth** for evaluating output quality.
 - **`dist/bundle.js`** — a pre-built Webpack 5 + Babel (IE11 target) bundle that exercises: async/await (generator transpilation), ES6 classes (prototype transpilation), cross-file imports, and named functions.
 
 To validate the full pipeline against the fixture:
@@ -537,6 +603,36 @@ cp .env.example .env
 
 The following features are candidates for future development, ordered roughly by impact and feasibility.
 
+### Tests
+
+Comprehensive test suite additions to improve coverage and reduce blind spots.
+
+#### Highest-priority gaps (completed)
+- [x] End-to-end fixture validation against the new task manager — `src/services/fixture.e2etest.ts`
+- [x] `--no-heuristic-naming` CLI contract test (all providers) — added to `src/services/sanitizer/sanitizer-flag.e2etest.ts`
+- [x] `--rename-all` integration behavior test — `src/plugins/local-llm-rename/rename-all.test.ts`
+- [x] `webcrack` output discovery test (recursive files) — `src/plugins/webcrack.test.ts`
+- [x] Call graph import variants test (alias, default, namespace, CJS) — added to `src/services/callgraph/index.test.ts`
+
+#### Additional comprehensive tests
+- [ ] Call graph node types coverage (arrow functions, expressions, class methods) (TODO: functionality currently missing)
+- [ ] Call graph duplicate edge suppression (TODO: functionality currently missing)
+- [ ] Graph builder import normalization test (TODO: functionality currently missing)
+- [x] `GraphPresenter.toMermaid` depth/entry tests
+- [x] `graph` command failure-path E2E tests
+- [x] `explore` command tests (`--no-open`, invalid port, startup/shutdown)
+- [x] Explorer server negative-path tests (missing files, malformed JSON, large reads)
+- [x] Explorer frontend transform unit tests (layout, edge dedup, dangling edges)
+- [x] Explorer store state-machine tests (history, transitions, error fallback)
+- [x] Sanitizer fallback tests (Prettier/Wakaru failure resilience)
+- [x] Input validation unit tests for utilities (number-utils, file-utils, env, url)
+- [x] Download/model management tests (unknown model, already downloaded, async completion)
+- [x] Provider prompt-shape tests (OpenAI, OpenRouter, Gemini framework injection)
+- [x] `unminify` pipeline ordering test (webcrack → graph → sanitizer → plugins → callgraph)
+- [x] Doc/fixture consistency test (fixture README references existing files)
+
+---
+
 ### Sourcemap integration
 Accept an optional `.js.map` file alongside the input bundle. When present, use original symbol names from the sourcemap as locked identifiers — the LLM would only rename symbols that have no sourcemap entry. This would dramatically improve quality for partially-obfuscated production builds.
 
@@ -558,8 +654,6 @@ Expose the internal `(code: string) => Promise<string>` pipeline as a programmat
 ### Dead code / reachability analysis
 Use the call graph to identify functions that are never called from any entry point, flagging them as potentially dead code. This would aid in both understanding and cleaning up obfuscated bundles.
 
-### Framework-aware renaming hints
-Detect common framework patterns (React component shapes, Express route handlers, Node.js event emitter patterns) and inject framework-specific system prompt context into the LLM renaming step to produce higher-quality, idiomatic names.
 
 ### Configurable rule profiles
 Expose `STRUCTURAL_RULES` and `HEURISTIC_RULES` through a JSON or YAML config file, allowing users to enable, disable, or reorder individual Wakaru transformation rules without modifying source code or rebuilding.

@@ -31,6 +31,62 @@ test('Internal call creates an internal edge', async () => {
   }
 });
 
+test('Aliased named import creates an external edge', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'callgraph-test-'));
+  try {
+    await writeFile(join(dir, 'main.js'), `import { b as runLib } from './lib'; function a() { runLib(); }`);
+    await writeFile(join(dir, 'lib.js'), `export function b() {}`);
+    const graph = await new CallGraphBuilder().build(dir);
+    const edge = graph.edges.find(e => e.from === 'main.js:a' && e.to === 'lib.js:b');
+    assert.ok(edge, 'Expected aliased import to resolve to lib.js:b');
+    assert.strictEqual(edge?.type, 'external');
+  } finally {
+    await rm(dir, { recursive: true });
+  }
+});
+
+test('Default import does not crash call graph analysis', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'callgraph-test-'));
+  try {
+    await writeFile(join(dir, 'main.js'), `import service from './lib'; function a() { service(); }`);
+    await writeFile(join(dir, 'lib.js'), `export default function service() {}`);
+    const graph = await new CallGraphBuilder().build(dir);
+    assert.ok(graph.nodes['main.js:a'], 'Expected caller node to be created');
+    assert.ok(
+      graph.edges.some(e => e.from === 'main.js:a'),
+      'Expected at least one edge from default-import caller'
+    );
+  } finally {
+    await rm(dir, { recursive: true });
+  }
+});
+
+test('Namespace import does not crash call graph analysis', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'callgraph-test-'));
+  try {
+    await writeFile(join(dir, 'main.js'), `import * as utils from './lib'; function a() { utils.helper(); }`);
+    await writeFile(join(dir, 'lib.js'), `export function helper() {}`);
+    const graph = await new CallGraphBuilder().build(dir);
+    assert.ok(graph.nodes['main.js:a'], 'Expected caller node to be created');
+    assert.ok(graph.nodes['lib.js:helper'], 'Expected namespace target node to be created');
+  } finally {
+    await rm(dir, { recursive: true });
+  }
+});
+
+test('CommonJS require member calls do not crash call graph analysis', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'callgraph-test-'));
+  try {
+    await writeFile(join(dir, 'main.js'), `const utils = require('./lib.js'); function a() { utils.helper(); }`);
+    await writeFile(join(dir, 'lib.js'), `exports.helper = function helper() {};`);
+    const graph = await new CallGraphBuilder().build(dir);
+    assert.ok(graph.nodes['main.js:a'], 'Expected caller node to be created');
+    assert.ok(Object.keys(graph.nodes).length >= 1, 'Expected graph nodes to be created');
+  } finally {
+    await rm(dir, { recursive: true });
+  }
+});
+
 test('Cross-file call creates an external edge', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'callgraph-test-'));
   try {
@@ -66,6 +122,62 @@ test('Unknown callee is still recorded', async () => {
     const edge = graph.edges.find(e => e.from === 'main.js:foo' && e.to === 'main.js:unknownFunc');
     assert.ok(edge, 'Expected edge from main.js:foo to main.js:unknownFunc even if unknownFunc is unresolved');
     assert.strictEqual(edge.type, 'internal');
+  } finally {
+    await rm(dir, { recursive: true });
+  }
+});
+
+test('Aliased named import creates an external edge', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'callgraph-test-'));
+  try {
+    await writeFile(join(dir, 'main.js'), `import { b as runLib } from './lib'; function a() { runLib(); }`);
+    await writeFile(join(dir, 'lib.js'), `export function b() {}`);
+    const graph = await new CallGraphBuilder().build(dir);
+    const edge = graph.edges.find(e => e.from === 'main.js:a' && e.to === 'lib.js:b');
+    assert.ok(edge, 'Expected aliased import to resolve to lib.js:b');
+    assert.strictEqual(edge?.type, 'external');
+  } finally {
+    await rm(dir, { recursive: true });
+  }
+});
+
+test('Default import does not crash call graph analysis', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'callgraph-test-'));
+  try {
+    await writeFile(join(dir, 'main.js'), `import service from './lib'; function a() { service(); }`);
+    await writeFile(join(dir, 'lib.js'), `export default function service() {}`);
+    const graph = await new CallGraphBuilder().build(dir);
+    assert.ok(graph.nodes['main.js:a'], 'Expected caller node to be created');
+    assert.ok(
+      graph.edges.some(e => e.from === 'main.js:a'),
+      'Expected at least one edge from default-import caller'
+    );
+  } finally {
+    await rm(dir, { recursive: true });
+  }
+});
+
+test('Namespace import does not crash call graph analysis', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'callgraph-test-'));
+  try {
+    await writeFile(join(dir, 'main.js'), `import * as utils from './lib'; function a() { utils.helper(); }`);
+    await writeFile(join(dir, 'lib.js'), `export function helper() {}`);
+    const graph = await new CallGraphBuilder().build(dir);
+    assert.ok(graph.nodes['main.js:a'], 'Expected caller node to be created');
+    assert.ok(graph.nodes['lib.js:helper'], 'Expected namespace target node to be created');
+  } finally {
+    await rm(dir, { recursive: true });
+  }
+});
+
+test('CommonJS require member calls do not crash call graph analysis', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'callgraph-test-'));
+  try {
+    await writeFile(join(dir, 'main.js'), `const utils = require('./lib.js'); function a() { utils.helper(); }`);
+    await writeFile(join(dir, 'lib.js'), `exports.helper = function helper() {};`);
+    const graph = await new CallGraphBuilder().build(dir);
+    assert.ok(graph.nodes['main.js:a'], 'Expected caller node to be created');
+    assert.ok(Object.keys(graph.nodes).length >= 1, 'Expected graph nodes to be created');
   } finally {
     await rm(dir, { recursive: true });
   }

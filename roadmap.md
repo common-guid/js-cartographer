@@ -48,21 +48,46 @@ The current `graph` command is useful but limited by the terminal. A web-based e
 
 ---
 
-## 5. Dynamic Analysis & Runtime-Assisted Naming
-**Effort:** Very High
-**Objective:** Use execution traces to resolve identities that static analysis cannot.
+## 6. Black-Box API Surface Reconstruction & Parameter Discovery
+**Effort:** High
+**Objective:** Reconstruct the backend API surface and hidden parameters from client-side code.
 
-The "Holy Grail" of deobfuscation. This involves:
-- **Instrumentation:** Automatically injecting tracking code into the bundle.
-- **Sandbox Execution:** Running the code in a headless environment (Playwright/Puppeteer) to observe real variable values, property access patterns, and function call arguments.
-- **Feedback Loop:** Feeding runtime data (e.g., "This variable always holds a URL string") back into the LLM renamer to produce names that are not just syntactically plausible, but factually correct.
+Security researchers often operate in black-box environments. This feature would:
+- **Route Synthesis:** Analyze string templates, concatenation, and routing libraries (React Router, etc.) to build a "Virtual OpenAPI Spec."
+- **Parameter Discovery:** Identify "hidden" parameters (e.g., `?debug=1`, `?admin=true`) and RESTful patterns that aren't visible in standard traffic.
+- **Attack Surface Mapping:** Flag unlinked endpoints or "ghost" routes present in the JS bundle but not used in the UI.
+
+---
+
+## 7. Automated "Taint-to-Sink" Mapping via LLM-Augmented Data Flow
+**Effort:** Very High
+**Objective:** Trace sensitive data from user-controlled "sources" to dangerous "sinks."
+
+Finding XSS, Open Redirects, or sensitive data leaks in a 5MB bundle is a needle-in-a-haystack problem. This engine would:
+- **Sink/Source Identification:** Automatically label common browser sinks (`eval`, `dangerouslySetInnerHTML`, `fetch`) and sources (`location.hash`, `postMessage`).
+- **Cross-Module Flow:** Use the recovered call-graph to track data movement across different modules, even when obfuscated.
+- **LLM Sanitization Check:** Use the LLM to determine if data passing through a function is being "sanitized" or if it remains "tainted."
+
+---
+
+## 8. Semantic "Security Logic" Tagging & Privilege Analysis
+**Effort:** High
+**Objective:** Use LLMs to categorize and highlight security-critical logic.
+
+Instead of reading all code, researchers need to focus on the "Auth" and "Logic" layers. This involves:
+- **Security Labeling:** Automatically tagging functions as "Auth Check," "Permission Logic," "Crypto/Hashing," or "State Management."
+- **Privilege Flow:** Visualizing how "role" or "token" data influences the execution of the application.
+- **Bypass Heuristics:** Highlighting client-side checks that are prime candidates for bypass (e.g., `if (!user.isAdmin) { ... }`).
 
 ---
 
 ## Effort Ranking (Highest to Lowest)
 
 1. **Dynamic Analysis & Runtime-Assisted Naming** (Requires complex instrumentation and sandboxing)
-2. **Interactive Web-based Explorer** (Requires building a full frontend and state management for graph/code sync)
-3. **Incremental Processing & Caching** (Requires robust dependency tracking and stable hashing)
-4. **Framework-Aware Context & Heuristics** (Requires extensive prompt engineering and pattern matching)
-5. **Sourcemap-Driven Truth Injection** (Relies on existing standards and mapping logic)
+2. **Automated "Taint-to-Sink" Mapping** (Requires extremely complex cross-module data flow analysis)
+3. **Interactive Web-based Explorer** (Requires building a full frontend and state management for graph/code sync)
+4. **Black-Box API Surface Reconstruction** (Requires deep static analysis of strings and patterns)
+5. **Semantic "Security Logic" Tagging** (Requires high-accuracy LLM classification and context)
+6. **Incremental Processing & Caching** (Requires robust dependency tracking and stable hashing)
+7. **Framework-Aware Context & Heuristics** (Requires extensive prompt engineering and pattern matching)
+8. **Sourcemap-Driven Truth Injection** (Relies on existing standards and mapping logic)

@@ -13,7 +13,10 @@ export const transformWithPlugins = async (
         minified: false,
         comments: false,
         sourceMaps: false,
-        retainLines: false
+        retainLines: false,
+        parserOpts: {
+          plugins: ["jsx", "typescript"]
+        }
       },
       (err, result) => {
         if (err || !result) {

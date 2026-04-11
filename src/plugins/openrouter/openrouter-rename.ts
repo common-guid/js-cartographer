@@ -3,6 +3,8 @@ import { visitAllIdentifiers } from "../local-llm-rename/visit-all-identifiers.j
 import { showPercentage } from "../../progress.js";
 import { verbose } from "../../verbose.js";
 import { withRetry } from "../../concurrency.js";
+import { detectFrameworks } from "../../services/heuristics/framework-detector.js";
+import { buildFrameworkPrompt } from "../prompts/framework-rules.js";
 
 export function openrouterRename({
   apiKey,
@@ -27,6 +29,7 @@ export function openrouterRename({
   });
 
   return async (code: string): Promise<string> => {
+    const frameworks = await detectFrameworks(code);
     return await visitAllIdentifiers(
       code,
       async (name, surroundingCode) => {
@@ -35,7 +38,7 @@ export function openrouterRename({
 
         const renamed = await withRetry(async () => {
           const response = await client.chat.completions.create(
-            toRenamePrompt(name, surroundingCode, model)
+            toRenamePrompt(name, surroundingCode, model, frameworks)
           );
           const result = response.choices[0].message?.content;
           if (!result) {
@@ -58,8 +61,10 @@ export function openrouterRename({
 function toRenamePrompt(
   name: string,
   surroundingCode: string,
-  model: string
+  model: string,
+  frameworks: string[] = []
 ): OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming {
+  const frameworkRules = buildFrameworkPrompt(frameworks);
   return {
     model,
     messages: [
@@ -73,7 +78,7 @@ The code you receive has already been structurally de-transpiled and formatted. 
 
 1. **Respect Static Analysis:** The code has been pre-analyzed. If a variable is already named meaningfully (e.g., \`document\`, \`window\`, \`element\`, \`jsonResponse\`), **YOU MUST NOT RENAME IT**. Treat these names as locked facts.
 2. **Focus on the Unknown:** Only rename variables that are still obfuscated (e.g., \`a\`, \`x\`, \`_0x4f2\`, \`var1\`).
-3. **No Hallucinations:** Do not "guess" a name if you are unsure. If a variable name is locked, use it exactly as is.`
+3. **No Hallucinations:** Do not "guess" a name if you are unsure. If a variable name is locked, use it exactly as is.${frameworkRules ? `\n${frameworkRules}` : ""}`
       },
       {
         role: "user",
