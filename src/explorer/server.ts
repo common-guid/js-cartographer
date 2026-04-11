@@ -2,6 +2,7 @@ import express from 'express';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import http from 'node:http';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -21,7 +22,7 @@ function isPathSafe(projectDir: string, requestedPath: string): boolean {
   return resolved.startsWith(normalizedProject + path.sep) || resolved === normalizedProject;
 }
 
-export function createExplorerServer(options: ExplorerServerOptions) {
+export function createExplorerServer(options: ExplorerServerOptions): Promise<http.Server> {
   const { directory, port, host } = options;
   const projectDir = path.resolve(directory);
   const app = express();
@@ -120,9 +121,9 @@ export function createExplorerServer(options: ExplorerServerOptions) {
   });
 
   // --- Start ---
-  return new Promise<void>((resolve) => {
-    app.listen(port, host, () => {
-      resolve();
+  return new Promise<http.Server>((resolve) => {
+    const server = app.listen(port, host, () => {
+      resolve(server);
     });
   });
 }

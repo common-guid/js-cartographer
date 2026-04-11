@@ -27,7 +27,8 @@ export default function GraphPane() {
 
   const { flowNodes, flowEdges } = useMemo(() => {
     if (graphView === 'call-graph' && callGraph) {
-      return { ...callGraphToFlow(callGraph), ...{ flowNodes: callGraphToFlow(callGraph).nodes, flowEdges: callGraphToFlow(callGraph).edges } };
+      const result = callGraphToFlow(callGraph);
+      return { flowNodes: result.nodes, flowEdges: result.edges };
     }
     if (graphView === 'module-graph' && moduleGraph) {
       const result = moduleGraphToFlow(moduleGraph);
