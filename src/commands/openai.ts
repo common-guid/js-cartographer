@@ -41,6 +41,7 @@ export const openai = cli()
     "--no-heuristic-naming",
     "Disable static renaming (Phase 3 optimization)"
   )
+  .option("-s, --sourcemap <path>", "The sourcemap file to use for truth injection")
   .argument("input", "The input minified Javascript file")
   .action(async (filename, opts) => {
     if (opts.verbose) {
@@ -69,6 +70,7 @@ export const openai = cli()
         prettier
       ],
       sanitizer,
-      parseNumber(opts.fileConcurrency)
+      parseNumber(opts.fileConcurrency),
+      opts.sourcemap
     );
   });

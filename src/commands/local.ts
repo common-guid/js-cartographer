@@ -39,6 +39,7 @@ export const local = cli()
     "--no-heuristic-naming",
     "Disable static renaming (Phase 3 optimization)"
   )
+  .option("-s, --sourcemap <path>", "The sourcemap file to use for truth injection")
   .argument("input", "The input minified Javascript file")
   .action(async (filename, opts) => {
     if (opts.verbose) {
@@ -62,6 +63,7 @@ export const local = cli()
       opts.outputDir,
       [babel, localRename(prompt, contextWindowSize, opts.renameAll ?? false), prettier],
       sanitizer,
-      parseNumber(opts.fileConcurrency)
+      parseNumber(opts.fileConcurrency),
+      opts.sourcemap
     );
   });

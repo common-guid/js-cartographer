@@ -16,7 +16,8 @@ export async function unminify(
   outputDir: string,
   plugins: ((code: string) => Promise<string>)[] = [],
   sanitizer?: WakaruSanitizer,
-  fileConcurrency: number = DEFAULT_FILE_CONCURRENCY
+  fileConcurrency: number = DEFAULT_FILE_CONCURRENCY,
+  sourcemapPath?: string
 ) {
   ensureFileExists(filename);
   const bundledCode = await fs.readFile(filename, "utf-8");
