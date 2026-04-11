@@ -24,11 +24,19 @@ function get(path: string): Promise<{ status: number; body: any }> {
 }
 
 describe('Explorer Server', () => {
+  let server: http.Server;
+
   before(async () => {
-    await createExplorerServer({
+    server = await createExplorerServer({
       directory: 'fixture-analysis',
       port: PORT,
       host: HOST,
+    });
+  });
+
+  after(() => {
+    return new Promise<void>((resolve) => {
+      server.close(() => resolve());
     });
   });
 
