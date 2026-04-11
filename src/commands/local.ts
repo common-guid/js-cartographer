@@ -4,7 +4,7 @@ import { DEFAULT_MODEL } from "../local-models.js";
 import { unminify } from "../unminify.js";
 import prettier from "../plugins/prettier.js";
 import babel from "../plugins/babel/babel.js";
-import { localReanme } from "../plugins/local-llm-rename/local-llm-rename.js";
+import { localRename } from "../plugins/local-llm-rename/local-llm-rename.js";
 import { verbose } from "../verbose.js";
 import { DEFAULT_CONTEXT_WINDOW_SIZE } from "./default-args.js";
 import { parseNumber } from "../number-utils.js";
@@ -60,7 +60,7 @@ export const local = cli()
     await unminify(
       filename,
       opts.outputDir,
-      [babel, localReanme(prompt, contextWindowSize, opts.renameAll ?? false), prettier],
+      [babel, localRename(prompt, contextWindowSize, opts.renameAll ?? false), prettier],
       sanitizer,
       parseNumber(opts.fileConcurrency)
     );

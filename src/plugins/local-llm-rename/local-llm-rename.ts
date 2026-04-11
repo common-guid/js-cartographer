@@ -7,7 +7,7 @@ import { detectFrameworks } from "../../services/heuristics/framework-detector.j
 
 const PADDING_CHARS = 200;
 
-export const localReanme = (
+export const localRename = (
   prompt: Prompt,
   contextWindowSize: number,
   renameAll: boolean = false
