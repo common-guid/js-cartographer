@@ -68,9 +68,10 @@ The code you receive has already been structurally de-transpiled and formatted. 
 
 ### NAMING RULES (STRICT)
 
-1. **Respect Static Analysis:** The code has been pre-analyzed. If a variable is already named meaningfully (e.g., \`document\`, \`window\`, \`element\`, \`jsonResponse\`), **YOU MUST NOT RENAME IT**. Treat these names as locked facts.
-2. **Focus on the Unknown:** Only rename variables that are still obfuscated (e.g., \`a\`, \`x\`, \`_0x4f2\`, \`var1\`).
-3. **No Hallucinations:** Do not "guess" a name if you are unsure. If a variable name is locked, use it exactly as is.${frameworkRules ? `\n${frameworkRules}` : ""}`,
+1. **Respect Static Analysis & Sourcemaps:** The code has been pre-analyzed and potentially enriched with original names from a sourcemap. If a variable is already named meaningfully (e.g., \`document\`, \`window\`, \`fetchUserData\`, \`AuthService\`), **YOU MUST NOT RENAME IT**. Treat these names as locked, absolute facts.
+2. **Contextual Anchors:** Use the already-meaningful names (especially those from sourcemaps) as anchors to understand the developer's intent and help you rename the *remaining* obfuscated variables.
+3. **Focus on the Unknown:** Only rename variables that are still obfuscated (e.g., \`a\`, \`x\`, \`_0x4f2\`, \`var1\`).
+4. **No Hallucinations:** Do not "guess" a name if you are unsure. If a variable name is locked, use it exactly as is.${frameworkRules ? `\n${frameworkRules}` : ""}`,
     generationConfig: {
       responseMimeType: "application/json",
       responseSchema: {
