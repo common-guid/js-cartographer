@@ -1,7 +1,7 @@
 import { create } from 'zustand';
-import type { CallGraphData, ModuleGraph, FunctionNode } from '../lib/types';
+import type { CallGraphData, ModuleGraph, FunctionNode, ApiSurface } from '../lib/types';
 
-export type GraphView = 'call-graph' | 'module-graph';
+export type GraphView = 'call-graph' | 'module-graph' | 'api-surface';
 
 interface NavigationEntry {
   file: string;
@@ -13,6 +13,7 @@ interface ExplorerState {
   // Data
   callGraph: CallGraphData | null;
   moduleGraph: ModuleGraph | null;
+  apiSurface: ApiSurface | null;
   loading: boolean;
   error: string | null;
 
@@ -49,6 +50,7 @@ export const useExplorerStore = create<ExplorerState>((set, get) => ({
   // Data
   callGraph: null,
   moduleGraph: null,
+  apiSurface: null,
   loading: true,
   error: null,
 
@@ -81,7 +83,12 @@ export const useExplorerStore = create<ExplorerState>((set, get) => ({
         throw new Error(data.error || 'Failed to fetch graphs');
       }
       const data = await res.json();
-      set({ callGraph: data.callGraph, moduleGraph: data.moduleGraph, loading: false });
+      set({ 
+        callGraph: data.callGraph, 
+        moduleGraph: data.moduleGraph, 
+        apiSurface: data.apiSurface,
+        loading: false 
+      });
     } catch (error: any) {
       set({ error: error.message, loading: false });
     }

@@ -9,6 +9,7 @@ export default function Header() {
   const navigateForward = useExplorerStore((s) => s.navigateForward);
   const historyIndex = useExplorerStore((s) => s.historyIndex);
   const history = useExplorerStore((s) => s.history);
+  const apiSurface = useExplorerStore((s) => s.apiSurface);
   const callGraph = useExplorerStore((s) => s.callGraph);
   const moduleGraph = useExplorerStore((s) => s.moduleGraph);
 
@@ -18,6 +19,7 @@ export default function Header() {
   const views: { key: GraphView; label: string; available: boolean }[] = [
     { key: 'call-graph', label: 'Call Graph', available: !!callGraph },
     { key: 'module-graph', label: 'Modules', available: !!moduleGraph },
+    { key: 'api-surface', label: 'API Surface', available: !!apiSurface },
   ];
 
   return (

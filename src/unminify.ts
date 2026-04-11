@@ -6,6 +6,7 @@ import { verbose } from "./verbose.js";
 import type { WakaruSanitizer } from "./services/sanitizer/index.js";
 import { GraphBuilder } from "./services/graph/index.js";
 import { CallGraphBuilder } from "./services/callgraph/index.js";
+import { ApiAnalyzer } from "./services/api-analyzer/index.js";
 import { pLimit } from "./concurrency.js";
 
 export const DEFAULT_FILE_CONCURRENCY = 3;
@@ -86,6 +87,14 @@ export async function unminify(
   const callGraphPath = path.join(outputDir, "call-graph.json");
   await fs.writeFile(callGraphPath, JSON.stringify(callGraph, null, 2));
   console.log(`[CallGraph] Graph data saved to ${callGraphPath}`);
+
+  // Build API Surface (api-reconstruction track)
+  console.log("[API] Reconstructing API Surface...");
+  const apiAnalyzer = new ApiAnalyzer();
+  const apiSurface = await apiAnalyzer.build(outputDir);
+  const apiSurfacePath = path.join(outputDir, "api-surface.json");
+  await fs.writeFile(apiSurfacePath, JSON.stringify(apiSurface, null, 2));
+  console.log(`[API] API surface data saved to ${apiSurfacePath}`);
 
   console.log(`Done! You can find your unminified code in ${outputDir}`);
 }

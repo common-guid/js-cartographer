@@ -9,7 +9,7 @@ const traverse: typeof babelTraverse.default.default = (
     : babelTraverse.default.default
 ) as any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
-export type DetectedFramework = "react" | "express";
+export type DetectedFramework = "react" | "express" | "react-router" | "vue-router";
 
 /**
  * Runs a single-pass Babel AST traversal to detect which JS frameworks are
@@ -20,6 +20,8 @@ export type DetectedFramework = "react" | "express";
  *  - React:   `import ... from 'react'|'react-dom'`, `require('react')`,
  *             `React.createElement(...)` (transpiled JSX)
  *  - Express: `import ... from 'express'`, `require('express')`
+ *  - React Router: `import ... from 'react-router'|'react-router-dom'`, `require('react-router'|'react-router-dom')`
+ *  - Vue Router: `import ... from 'vue-router'`, `require('vue-router')`
  */
 export async function detectFrameworks(
   code: string
@@ -36,6 +38,8 @@ export async function detectFrameworks(
         const src = path.node.source.value;
         if (src === "react" || src === "react-dom") detected.add("react");
         if (src === "express") detected.add("express");
+        if (src === "react-router" || src === "react-router-dom") detected.add("react-router");
+        if (src === "vue-router") detected.add("vue-router");
       },
 
       CallExpression(path) {
@@ -46,6 +50,8 @@ export async function detectFrameworks(
           const src = requireSource(node);
           if (src === "react" || src === "react-dom") detected.add("react");
           if (src === "express") detected.add("express");
+          if (src === "react-router" || src === "react-router-dom") detected.add("react-router");
+          if (src === "vue-router") detected.add("vue-router");
         }
 
         // Transpiled JSX: React.createElement(...)
