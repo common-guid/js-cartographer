@@ -8,7 +8,7 @@ This roadmap outlines potential directions for the project following the complet
 **Effort:** Low-Medium
 **Objective:** Use existing `.js.map` files to provide "locked" identifiers for the LLM.
 
-Currently, the LLM renames everything it thinks is obfuscated. In many production builds, some parts of the code are mapped via sourcemaps while others (third-party libs, injected scripts) are not. By accepting a sourcemap, we can:
+**[ACTIVE]** Integrating sourcemaps as a "source of truth." By accepting a sourcemap, we can:
 - Automatically "lock" variables that have known original names.
 - Provide the LLM with "anchor points" in the code, significantly increasing the accuracy of surrounding variable renames.
 - Reduce token usage by skipping already-identified symbols.
@@ -32,8 +32,9 @@ Modern bundles are heavily shaped by their frameworks. This direction involves:
 
 Currently, a change in a single module requires re-processing the entire bundle if it's treated as a single unit. This feature would:
 - Hash individual modules post-unbundling.
-- Maintain a local cache (`.cartographer/cache`) of LLM rename results.
-- Only "re-map" modules that have changed or whose dependencies have changed, drastically reducing cost and wait times for developers iterating on a specific part of a bundle.
+- Maintain a local cache (`.cartographer-cache.json` in `outputDir`) of LLM rename results.
+- **[ACTIVE] Resume Interrupted Runs:** Only re-process modules that haven't been successfully completed in a previous run, drastically reducing cost and wait times if a run is interrupted.
+- Only "re-map" modules that have changed or whose dependencies have changed.
 
 ---
 
