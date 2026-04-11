@@ -32,3 +32,8 @@
 - [x] Task: Provider Implementation (6e461ce)
     - [x] Apply changes across all providers: OpenAI, OpenRouter, Gemini, and Local Llama.
 - [x] Task: Conductor - User Manual Verification 'Phase 3: Prompt Augmentation' (Protocol in workflow.md)
+
+---
+
+## Phase: Review Fixes
+- [x] Task: Apply review suggestions (e80a698)
