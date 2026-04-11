@@ -9,6 +9,3 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [ ] **Track: Resume Interrupted Runs**
   *Link: [./tracks/resume/](./tracks/resume/)*
-
-- [x] **Track: Sourcemap-Driven Truth Injection**
-  *Link: [./tracks/sourcemap/](./tracks/sourcemap/)*

@@ -1,0 +1,6 @@
+{
+  "id": "sourcemap",
+  "name": "Sourcemap-Driven Truth Injection",
+  "status": "planned",
+  "description": "Integrate sourcemaps to provide locked 'source of truth' identifiers to the LLM, improving the accuracy of renaming the remaining obfuscated code."
+}
