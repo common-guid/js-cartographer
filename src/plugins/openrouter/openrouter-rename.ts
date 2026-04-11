@@ -5,19 +5,22 @@ import { verbose } from "../../verbose.js";
 import { withRetry } from "../../concurrency.js";
 import { detectFrameworks } from "../../services/heuristics/framework-detector.js";
 import { buildFrameworkPrompt } from "../prompts/framework-rules.js";
+import { SourcemapService } from "../../services/sourcemap/index.js";
 
 export function openrouterRename({
   apiKey,
   baseURL,
   model,
   contextWindowSize,
-  renameAll = false
+  renameAll = false,
+  sourcemapService
 }: {
   apiKey: string;
   baseURL: string;
   model: string;
   contextWindowSize: number;
   renameAll?: boolean;
+  sourcemapService?: SourcemapService;
 }) {
   const client = new OpenAI({
     apiKey,
@@ -53,7 +56,8 @@ export function openrouterRename({
       },
       contextWindowSize,
       showPercentage,
-      renameAll
+      renameAll,
+      sourcemapService
     );
   };
 }

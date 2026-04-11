@@ -4,6 +4,7 @@ import { showPercentage } from "../progress.js";
 import { withRetry } from "../concurrency.js";
 import { detectFrameworks } from "../services/heuristics/framework-detector.js";
 import { buildFrameworkPrompt } from "./prompts/framework-rules.js";
+import { SourcemapService } from "../services/sourcemap/index.js";
 import {
   GoogleGenerativeAI,
   ModelParams,
@@ -14,12 +15,14 @@ export function geminiRename({
   apiKey,
   model: modelName,
   contextWindowSize,
-  renameAll = false
+  renameAll = false,
+  sourcemapService
 }: {
   apiKey: string;
   model: string;
   contextWindowSize: number;
   renameAll?: boolean;
+  sourcemapService?: SourcemapService;
 }) {
   const client = new GoogleGenerativeAI(apiKey);
 
@@ -45,7 +48,8 @@ export function geminiRename({
       },
       contextWindowSize,
       showPercentage,
-      renameAll
+      renameAll,
+      sourcemapService
     );
   };
 }

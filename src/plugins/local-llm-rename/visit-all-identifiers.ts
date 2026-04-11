@@ -2,6 +2,7 @@ import { parseAsync, transformFromAstAsync, NodePath } from "@babel/core";
 import * as babelTraverse from "@babel/traverse";
 import { Identifier, toIdentifier, Node } from "@babel/types";
 import { shouldRename } from "./identifier-filter.js";
+import { SourcemapService } from "../../services/sourcemap/index.js";
 
 const traverse: typeof babelTraverse.default.default = (
   typeof babelTraverse.default === "function"
@@ -16,7 +17,8 @@ export async function visitAllIdentifiers(
   visitor: Visitor,
   contextWindowSize: number,
   onProgress?: (percentageDone: number) => void,
-  renameAll: boolean = false
+  renameAll: boolean = false,
+  sourcemapService?: SourcemapService
 ) {
   const ast = await parseAsync(code, {
     sourceType: "unambiguous",
@@ -35,11 +37,28 @@ export async function visitAllIdentifiers(
   const numRenamesExpected = scopes.length;
 
   for (const smallestScope of scopes) {
-    if (hasVisited(smallestScope, visited)) continue;
-
     const smallestScopeNode = smallestScope.node;
     if (smallestScopeNode.type !== "Identifier") {
       throw new Error("No identifiers found");
+    }
+
+    if (hasVisited(smallestScope, visited)) continue;
+
+    // Truth Injection Phase: check sourcemap first
+    if (sourcemapService && smallestScopeNode.loc) {
+      const originalName = await sourcemapService.getOriginalName(
+        smallestScopeNode.loc.start.line - 1,
+        smallestScopeNode.loc.start.column
+      );
+
+      if (originalName) {
+        if (originalName !== smallestScopeNode.name) {
+          smallestScope.scope.rename(smallestScopeNode.name, originalName);
+        }
+        markVisited(smallestScope, originalName, visited);
+        onProgress?.(visited.size / numRenamesExpected);
+        continue;
+      }
     }
 
     if (!renameAll && !shouldRename(smallestScopeNode.name)) {

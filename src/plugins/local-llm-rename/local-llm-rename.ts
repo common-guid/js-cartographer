@@ -4,13 +4,15 @@ import { Prompt } from "./llama.js";
 import { unminifyVariableName } from "./unminify-variable-name.js";
 import { visitAllIdentifiers } from "./visit-all-identifiers.js";
 import { detectFrameworks } from "../../services/heuristics/framework-detector.js";
+import { SourcemapService } from "../../services/sourcemap/index.js";
 
 const PADDING_CHARS = 200;
 
 export const localRename = (
   prompt: Prompt,
   contextWindowSize: number,
-  renameAll: boolean = false
+  renameAll: boolean = false,
+  sourcemapService?: SourcemapService
 ) => {
   return async (code: string): Promise<string> => {
     const [filename, frameworks] = await Promise.all([
@@ -24,7 +26,8 @@ export const localRename = (
         unminifyVariableName(prompt, name, filename, surroundingCode, frameworks),
       contextWindowSize,
       showPercentage,
-      renameAll
+      renameAll,
+      sourcemapService
     );
   };
 };
