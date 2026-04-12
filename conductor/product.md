@@ -10,6 +10,7 @@ To provide a powerful, AI-driven tool for transforming minified, obfuscated, or 
 
 ## Core Features
 - **Deobfuscation Pipeline:** Utilizes static analysis (Wakaru) and AST-level transpilation recovery.
+- **Batch Directory Processing:** Automatically processes entire directories of JavaScript chunks and matches them with corresponding sourcemaps, enabling reconstruction of large-scale projects.
 - **Sourcemap Truth Injection:** Leverages existing \`.js.map\` files to provide locked, 'source of truth' identifier names, dramatically improving deobfuscation accuracy for partially mapped bundles.
 - **LLM Semantic Renaming:** Leverages large language models (Local, OpenAI, Gemini, OpenRouter) to assign meaningful names to variables and functions.
 - **Codebase Mapping:** Generates navigable dependency graphs (`module-graph.json`) and semantic call graphs (`call-graph.json`) to trace data flow and execution paths.
