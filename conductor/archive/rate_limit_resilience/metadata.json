@@ -1,0 +1,6 @@
+{
+  "id": "rate_limit_resilience",
+  "name": "Rate-Limit Resilience (Resume + Key Rotation)",
+  "status": "planned",
+  "description": "Implement state file tracking for resuming runs and API key rotation to mitigate 429 rate limit errors."
+}
