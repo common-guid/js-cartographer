@@ -28,6 +28,11 @@ export const openai = cli()
   )
   .option("--verbose", "Show verbose output")
   .option(
+    "--contextSize <contextSize>",
+    "The context size to use for the LLM",
+    `${DEFAULT_CONTEXT_WINDOW_SIZE}`
+  )
+  .option(
     "--file-concurrency <n>",
     "Number of files to process in parallel",
     `${DEFAULT_FILE_CONCURRENCY}`

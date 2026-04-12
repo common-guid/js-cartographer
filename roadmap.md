@@ -15,6 +15,17 @@ This roadmap outlines potential directions for the project following the complet
 
 ---
 
+## 2. Batch Directory Processing
+**Effort:** Medium
+**Objective:** Automatically reconstruct entire projects from directories of chunks and sourcemaps.
+
+**[ACTIVE]** This feature enables bulk processing:
+- **Auto-Matching**: Automatically pairs JS chunk files with their corresponding `.js.map` files via comment parsing or filename correlation.
+- **Unified Graph**: Processes multiple bundles/chunks in a single run and generates a single, cohesive `module-graph.json` and `call-graph.json` representing the entire application.
+- **Improved UX**: Users can point Cartographer at a Webpack output directory rather than running it file-by-file.
+
+---
+
 ## 2. Framework-Aware Context & Heuristics
 **Effort:** Medium
 **Objective:** Detect and adapt deobfuscation strategies for specific libraries (React, Express, Vue).
