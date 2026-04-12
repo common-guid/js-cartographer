@@ -67,8 +67,8 @@ export const openrouter = cli()
       process.exit(1);
     }
 
-    const apiKey = opts.apiKey ?? env("OPENROUTER_API_KEY");
-    const baseURL = opts.baseURL;
+    const apiKeys = (opts.apiKey ?? env("OPENROUTER_API_KEY")).split(",").map((k: string) => k.trim());
+    const keyManager = new KeyManager(apiKeys);
     const contextWindowSize = parseNumber(opts.contextSize);
     const sanitizer = new WakaruSanitizer({
       enabled: opts.sanitizer !== false,
@@ -80,7 +80,7 @@ export const openrouter = cli()
       [
         babel,
         openrouterRename({
-          apiKey,
+          keyManager,
           baseURL,
           model: opts.model,
           contextWindowSize,

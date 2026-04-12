@@ -6,42 +6,67 @@ import { withRetry } from "../../concurrency.js";
 import { detectFrameworks } from "../../services/heuristics/framework-detector.js";
 import { buildFrameworkPrompt } from "../prompts/framework-rules.js";
 import { SourcemapService } from "../../services/sourcemap/index.js";
+import { KeyManager } from "../../services/key-manager/index.js";
 
 export function openaiRename({
-  apiKey,
+  keyManager,
   baseURL,
   model,
   contextWindowSize,
   renameAll = false,
   sourcemapService
 }: {
-  apiKey: string;
+  keyManager: KeyManager;
   baseURL: string;
   model: string;
   contextWindowSize: number;
   renameAll?: boolean;
   sourcemapService?: SourcemapService;
 }) {
-  const client = new OpenAI({ apiKey, baseURL });
+  let currentKey = keyManager.getNextKey();
+  let client = new OpenAI({ apiKey: currentKey, baseURL });
+  let requestCount = 0;
+  const ROTATION_THRESHOLD = 5;
 
   return async (code: string): Promise<string> => {
     const frameworks = await detectFrameworks(code);
     return await visitAllIdentifiers(
       code,
       async (name, surroundingCode) => {
+        requestCount++;
+        if (requestCount >= ROTATION_THRESHOLD) {
+          currentKey = keyManager.getNextKey();
+          client = new OpenAI({ apiKey: currentKey, baseURL });
+          requestCount = 0;
+          verbose.log(`[Rotation] Switched to new API key`);
+        }
+
         verbose.log(`Renaming ${name}`);
         verbose.log("Context: ", surroundingCode);
 
-        const renamed = await withRetry(async () => {
-          const response = await client.chat.completions.create(
-            toRenamePrompt(name, surroundingCode, model, frameworks)
-          );
-          const result = response.choices[0].message?.content;
-          if (!result) {
-            throw new Error("Failed to rename", { cause: response });
+        const renamed = await withRetry(
+          async () => {
+            const response = await client.chat.completions.create(
+              toRenamePrompt(name, surroundingCode, model, frameworks)
+            );
+            const result = response.choices[0].message?.content;
+            if (!result) {
+              throw new Error("Failed to rename", { cause: response });
+            }
+            return JSON.parse(result).newName;
+          },
+          {
+            onRetry: (err) => {
+              if (err.status === 429) {
+                verbose.log(`[429] Rate limit hit for key. Rotating...`);
+                keyManager.markKeyAsFailed(currentKey);
+                currentKey = keyManager.getNextKey();
+                client = new OpenAI({ apiKey: currentKey, baseURL });
+                requestCount = 0;
+              }
+            }
           }
-          return JSON.parse(result).newName;
-        });
+        );
 
         verbose.log(`Renamed to ${renamed}`);
 

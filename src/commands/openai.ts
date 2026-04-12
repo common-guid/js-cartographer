@@ -67,6 +67,8 @@ export const openai = cli()
       process.exit(1);
     }
 
+    const apiKeys = (opts.apiKey ?? env("OPENAI_API_KEY")).split(",").map((k: string) => k.trim());
+    const keyManager = new KeyManager(apiKeys);
     const apiKey = opts.apiKey ?? env("OPENAI_API_KEY");
     const baseURL = opts.baseURL;
     const contextWindowSize = parseNumber(opts.contextSize);
@@ -80,7 +82,7 @@ export const openai = cli()
       [
         babel,
         openaiRename({
-          apiKey,
+          keyManager,
           baseURL,
           model: opts.model,
           contextWindowSize,

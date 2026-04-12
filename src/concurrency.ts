@@ -65,6 +65,8 @@ export interface RetryOptions {
   initialDelayMs?: number;
   /** Multiplier applied to the delay after each retry. Default: 2. */
   backoffFactor?: number;
+  /** Callback triggered before each retry attempt. */
+  onRetry?: (error: any, attempt: number) => void | Promise<void>;
 }
 
 /**
@@ -80,6 +82,7 @@ export async function withRetry<T>(
     maxAttempts = 4,
     initialDelayMs = 1000,
     backoffFactor = 2,
+    onRetry
   } = opts;
 
   let lastError: unknown;
@@ -91,6 +94,9 @@ export async function withRetry<T>(
     } catch (err) {
       lastError = err;
       if (attempt < maxAttempts) {
+        if (onRetry) {
+          await onRetry(err, attempt);
+        }
         await sleep(delay);
         delay *= backoffFactor;
       }

@@ -62,7 +62,8 @@ export const azure = cli()
       process.exit(1);
     }
 
-    const apiKey = opts.apiKey ?? env("GEMINI_API_KEY");
+    const apiKeys = (opts.apiKey ?? env("GEMINI_API_KEY")).split(",").map((k: string) => k.trim());
+    const keyManager = new KeyManager(apiKeys);
     const contextWindowSize = parseNumber(opts.contextSize);
     const sanitizer = new WakaruSanitizer({
       enabled: opts.sanitizer !== false,
@@ -74,7 +75,7 @@ export const azure = cli()
       [
         babel,
         geminiRename({
-          apiKey,
+          keyManager,
           model: opts.model,
           contextWindowSize,
           renameAll: opts.renameAll ?? false

@@ -5,6 +5,7 @@ import { withRetry } from "../concurrency.js";
 import { detectFrameworks } from "../services/heuristics/framework-detector.js";
 import { buildFrameworkPrompt } from "./prompts/framework-rules.js";
 import { SourcemapService } from "../services/sourcemap/index.js";
+import { KeyManager } from "../services/key-manager/index.js";
 import {
   GoogleGenerativeAI,
   ModelParams,
@@ -12,35 +13,59 @@ import {
 } from "@google/generative-ai";
 
 export function geminiRename({
-  apiKey,
+  keyManager,
   model: modelName,
   contextWindowSize,
   renameAll = false,
   sourcemapService
 }: {
-  apiKey: string;
+  keyManager: KeyManager;
   model: string;
   contextWindowSize: number;
   renameAll?: boolean;
   sourcemapService?: SourcemapService;
 }) {
-  const client = new GoogleGenerativeAI(apiKey);
+  let currentKey = keyManager.getNextKey();
+  let client = new GoogleGenerativeAI(currentKey);
+  let requestCount = 0;
+  const ROTATION_THRESHOLD = 5; // Rotate key every 5 requests to spread load
 
   return async (code: string): Promise<string> => {
     const frameworks = await detectFrameworks(code);
     return await visitAllIdentifiers(
       code,
       async (name, surroundingCode) => {
+        requestCount++;
+        if (requestCount >= ROTATION_THRESHOLD) {
+          currentKey = keyManager.getNextKey();
+          client = new GoogleGenerativeAI(currentKey);
+          requestCount = 0;
+          verbose.log(`[Rotation] Switched to new API key`);
+        }
+
         verbose.log(`Renaming ${name}`);
         verbose.log("Context: ", surroundingCode);
 
-        const renamed = await withRetry(async () => {
-          const model = client.getGenerativeModel(
-            toRenameParams(name, modelName, frameworks)
-          );
-          const result = await model.generateContent(surroundingCode);
-          return JSON.parse(result.response.text()).newName;
-        });
+        const renamed = await withRetry(
+          async () => {
+            const model = client.getGenerativeModel(
+              toRenameParams(name, modelName, frameworks)
+            );
+            const result = await model.generateContent(surroundingCode);
+            return JSON.parse(result.response.text()).newName;
+          },
+          {
+            onRetry: (err) => {
+              if (err.status === 429) {
+                verbose.log(`[429] Rate limit hit for key. Rotating...`);
+                keyManager.markKeyAsFailed(currentKey);
+                currentKey = keyManager.getNextKey();
+                client = new GoogleGenerativeAI(currentKey);
+                requestCount = 0;
+              }
+            }
+          }
+        );
 
         verbose.log(`Renamed to ${renamed}`);
 
