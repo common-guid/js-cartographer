@@ -7,7 +7,7 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [ ] **Track: Automated "Taint-to-Sink" Mapping via LLM-Augmented Data Flow**
   *Link: [./tracks/taint_mapping_20260410/](./tracks/taint_mapping_20260410/)*
 
-- [ ] **Track: Rate-Limit Resilience (Resume + Key Rotation)**
+- [x] **Track: Rate-Limit Resilience (Resume + Key Rotation)**
   *Link: [./tracks/rate_limit_resilience/](./tracks/rate_limit_resilience/)*
 
 - [ ] **Track: Integrate Qwen3-Coder-30B-A3B as a Local GGUF Model**
