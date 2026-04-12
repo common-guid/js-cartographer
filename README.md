@@ -42,25 +42,28 @@ Input bundle
  1. webcrack              ─── Unbundles webpack/other bundle formats into files
      │
      ▼
- 2. WakaruSanitizer       ─── Restores structure (async/await, class, JSX, optional chaining)
+ 2. Sourcemap Injection   ─── (Optional) Injects original names from a .js.map file
+     │                       as locked "source of truth" identifiers
+     ▼
+ 3. WakaruSanitizer       ─── Restores structure (async/await, class, JSX, optional chaining)
      │                       and applies static heuristic rules (e.g., void 0 → undefined)
      ▼
- 3. Babel transforms      ─── Additional AST normalization/cleanup passes
+ 4. Babel transforms      ─── Additional AST normalization/cleanup passes
      │
      ▼
- 4. Humanify filter       ─── Selects identifiers that still look obfuscated
+ 5. Humanify filter       ─── Selects identifiers that still look obfuscated
      │                       (skip globals/descriptive names unless --rename-all)
      ▼
- 5. Humanify LLM rename   ─── Renames unresolved identifiers via OpenAI/Gemini/
+ 6. Humanify LLM rename   ─── Renames unresolved identifiers via OpenAI/Gemini/
      │                       OpenRouter/local GGUF with strict JSON output
      ▼
- 6. Prettier              ─── Final formatting pass
+ 7. Prettier              ─── Final formatting pass
      │
      ▼
- 7. GraphBuilder          ─── Writes module-graph.json (imports/exports per file)
+ 8. GraphBuilder          ─── Writes module-graph.json (imports/exports per file)
      │
      ▼
- 8. CallGraphBuilder      ─── Writes call-graph.json (function nodes + call edges)
+ 9. CallGraphBuilder      ─── Writes call-graph.json (function nodes + call edges)
      │
      ▼
 Output directory: recovered source files + graph artifacts
@@ -73,6 +76,15 @@ Output directory: recovered source files + graph artifacts
 - **Combined pipeline** gives the LLM cleaner code and a smaller target set of identifiers, so you get better names at lower cost while keeping structural changes deterministic.
 
 LLMs in this pipeline are used for naming, while structural restoration is handled by AST transforms. That separation is what keeps output readable without sacrificing semantic stability.
+
+### Sourcemap Truth Injection
+
+Cartographer can leverage existing `.js.map` files to dramatically improve deobfuscation accuracy through **Truth Injection**:
+
+1. **Source of Truth** — If a sourcemap is provided, Cartographer extracts the original variable and function names. These are treated as absolute "truth."
+2. **Identifier Locking** — Before any LLM processing, mapped identifiers are restored to their original names and "locked."
+3. **Contextual Anchoring** — The LLM is instructed to use these locked names as anchors. By seeing real names like `fetchUserData` or `AuthService` in the code, the LLM can more accurately deduce the purpose of the *remaining* obfuscated variables.
+4. **Efficiency** — Locked identifiers skip the LLM renaming phase entirely, reducing API token usage and runtime.
 
 ### Framework-Aware Context & Heuristics
 
@@ -103,6 +115,7 @@ This approach makes the LLM's job easier (smaller decision space, clearer conven
 ## Features
 
 - **Multi-provider LLM support**: OpenAI, Google Gemini, OpenRouter, or a fully local GGUF model (no API key needed)
+- **Sourcemap truth injection**: Accept an optional `.js.map` file alongside the input bundle. Original symbol names from the sourcemap are used as locked identifiers — the LLM will only rename symbols that have no sourcemap entry. These "locked" names act as contextual anchors, significantly improving the LLM's accuracy for the remaining unmapped code.
 - **Wakaru static pre-processing**: Restores transpiled patterns before the LLM ever sees the code:
   - `async/await` from generator state machines
   - ES6 `class` from prototype assignment chains
@@ -254,6 +267,7 @@ These flags are available on deobfuscation commands (`openai`, `gemini`, `openro
 | Flag | Description | Default |
 |------|-------------|---------|
 | `-o, --outputDir <dir>` | Directory to write output files | `output` |
+| `-s, --sourcemap <path>` | Optional sourcemap file for truth injection | none |
 | `--contextSize <n>` | Context window passed to the renamer | `1000` |
 | `--file-concurrency <n>` | Number of files processed in parallel | `3` |
 | `--rename-all` | Rename all identifiers (skip smart filtering) | off |
@@ -613,6 +627,7 @@ Comprehensive test suite additions to improve coverage and reduce blind spots.
 - [x] `--rename-all` integration behavior test — `src/plugins/local-llm-rename/rename-all.test.ts`
 - [x] `webcrack` output discovery test (recursive files) — `src/plugins/webcrack.test.ts`
 - [x] Call graph import variants test (alias, default, namespace, CJS) — added to `src/services/callgraph/index.test.ts`
+- [x] Sourcemap-driven truth injection — `src/services/sourcemap/index.ts`
 
 #### Additional comprehensive tests
 - [ ] Call graph node types coverage (arrow functions, expressions, class methods) (TODO: functionality currently missing)
@@ -632,9 +647,6 @@ Comprehensive test suite additions to improve coverage and reduce blind spots.
 - [x] Doc/fixture consistency test (fixture README references existing files)
 
 ---
-
-### Sourcemap integration
-Accept an optional `.js.map` file alongside the input bundle. When present, use original symbol names from the sourcemap as locked identifiers — the LLM would only rename symbols that have no sourcemap entry. This would dramatically improve quality for partially-obfuscated production builds.
 
 ### Interactive graph explorer (TUI)
 Replace the current ASCII tree output with a navigable terminal UI (e.g., using `ink` or `blessed`) that lets the user expand/collapse call graph nodes, jump to the recovered source file, and annotate functions with notes — all without leaving the terminal.
