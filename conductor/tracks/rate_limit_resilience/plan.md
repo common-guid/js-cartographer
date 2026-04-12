@@ -6,7 +6,7 @@
     - Stores an array of keys.
     - `getNextKey()`: Returns the next key using round-robin logic.
     - `markKeyAsFailed(key: string)`: Temporarily removes a key from rotation if it hits a 429.
-- [~] Update `src/commands/*.ts` to parse `apiKey` as a comma-separated list and instantiate `KeyManager`.
+- [x] Update `src/commands/*.ts` to parse `apiKey` as a comma-separated list and instantiate `KeyManager`. (07004ae)
 
 ## 2. State File Tracking (Resume)
 - [ ] Create `src/services/cache/index.ts`.
