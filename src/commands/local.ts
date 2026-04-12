@@ -41,7 +41,7 @@ export const local = cli()
     "--no-heuristic-naming",
     "Disable static renaming (Phase 3 optimization)"
   )
-  .option("-s, --sourcemap <path>", "The sourcemap file to use for truth injection")
+  .option("--sourcemap <path>", "The sourcemap file to use for truth injection")
   .option("--maps <dir>", "Directory containing sourcemap files for automated matching")
   .argument("input", "The input minified Javascript file or directory")
   .action(async (input, opts) => {
