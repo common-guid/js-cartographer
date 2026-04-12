@@ -9,9 +9,9 @@
 - [x] Update `src/commands/*.ts` to parse `apiKey` as a comma-separated list and instantiate `KeyManager`. (07004ae)
 
 ## 2. State File Tracking (Resume)
-- [ ] Create `src/services/cache/index.ts`.
-- [ ] Implement `StateCache` to read/write `.cartographer-cache.json`.
-- [ ] Integrate into `src/unminify.ts`:
+- [x] Create `src/services/cache/index.ts`. (c929751)
+- [x] Implement `StateCache` to read/write `.cartographer-cache.json`. (c929751)
+- [~] Integrate into `src/unminify.ts`:
     - Before processing a module, check hash against cache.
     - After successful LLM pass, update cache.
 
