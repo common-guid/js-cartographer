@@ -1,0 +1,6 @@
+{
+  "id": "batch_directory_processing",
+  "name": "Batch Directory Processing",
+  "status": "planned",
+  "description": "Enable processing of directories containing multiple JavaScript chunks and automated matching with corresponding sourcemap directories."
+}
