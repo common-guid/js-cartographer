@@ -11,13 +11,13 @@
 ## 2. State File Tracking (Resume)
 - [x] Create `src/services/cache/index.ts`. (c929751)
 - [x] Implement `StateCache` to read/write `.cartographer-cache.json`. (c929751)
-- [~] Integrate into `src/unminify.ts`:
+- [x] Integrate into `src/unminify.ts`: (2badba6)
     - Before processing a module, check hash against cache.
     - After successful LLM pass, update cache.
 
 ## 3. Resilience Integration
-- [ ] Update `withRetry` in `src/concurrency.ts` to optionally accept the `KeyManager`.
-- [ ] If a 429 occurs, trigger `keyManager.markKeyAsFailed` and immediately retry with a new key if available.
+- [x] Update `withRetry` in `src/concurrency.ts` to optionally accept the `KeyManager`. (07004ae)
+- [x] If a 429 occurs, trigger `keyManager.markKeyAsFailed` and immediately retry with a new key if available. (07004ae)
 
 ## 4. Verification & Testing
 - [ ] Unit tests for `KeyManager` rotation and failover.
