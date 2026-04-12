@@ -9,39 +9,48 @@ import { CallGraphBuilder } from "./services/callgraph/index.js";
 import { ApiAnalyzer } from "./services/api-analyzer/index.js";
 import { pLimit } from "./concurrency.js";
 import { SourcemapService } from "./services/sourcemap/index.js";
+import { InputTask } from "./services/discovery/index.js";
 
 export const DEFAULT_FILE_CONCURRENCY = 3;
 
 export async function unminify(
-  filename: string,
+  tasks: InputTask[],
   outputDir: string,
   plugins: ((code: string, sourcemapService?: SourcemapService) => Promise<string>)[] = [],
   sanitizer?: WakaruSanitizer,
-  fileConcurrency: number = DEFAULT_FILE_CONCURRENCY,
-  sourcemapPath?: string
+  fileConcurrency: number = DEFAULT_FILE_CONCURRENCY
 ) {
-  ensureFileExists(filename);
-  const bundledCode = await fs.readFile(filename, "utf-8");
-  const extractedFiles = await webcrack(bundledCode, outputDir);
+  const allExtractedFiles: { path: string; sourcemapService?: SourcemapService }[] = [];
 
-  let sourcemapService: SourcemapService | undefined;
-  if (sourcemapPath) {
-    ensureFileExists(sourcemapPath);
-    const rawSourcemap = JSON.parse(await fs.readFile(sourcemapPath, "utf-8"));
-    sourcemapService = new SourcemapService(rawSourcemap);
-    await sourcemapService.init();
-    console.log(`[Sourcemap] Truth Injection enabled using ${sourcemapPath}`);
+  console.log(`[Batch] Processing ${tasks.length} input chunks...`);
+
+  for (const task of tasks) {
+    ensureFileExists(task.jsPath);
+    const bundledCode = await fs.readFile(task.jsPath, "utf-8");
+    const extractedFiles = await webcrack(bundledCode, outputDir);
+
+    let sourcemapService: SourcemapService | undefined;
+    if (task.mapPath) {
+      ensureFileExists(task.mapPath);
+      const rawSourcemap = JSON.parse(await fs.readFile(task.mapPath, "utf-8"));
+      sourcemapService = new SourcemapService(rawSourcemap);
+      await sourcemapService.init();
+      console.log(`[Sourcemap] Truth Injection enabled for ${path.basename(task.jsPath)} using ${path.basename(task.mapPath)}`);
+    }
+
+    allExtractedFiles.push(...extractedFiles.map(f => ({ ...f, sourcemapService })));
   }
 
   try {
     // Build Module Graph (Phase 4)
+    // We build the graph after unbundling all chunks to ensure cross-chunk references are captured if possible
     const graphBuilder = new GraphBuilder();
     const graph = await graphBuilder.build(outputDir);
     const graphPath = path.join(outputDir, "module-graph.json");
     await fs.writeFile(graphPath, JSON.stringify(graph, null, 2));
     console.log(`[Graph] Dependency map saved to ${graphPath}`);
 
-    const totalFiles = extractedFiles.length;
+    const totalFiles = allExtractedFiles.length;
     const effectiveConcurrency = Math.max(
       1,
       Math.min(fileConcurrency, totalFiles)
@@ -49,13 +58,13 @@ export async function unminify(
 
     if (totalFiles > 1) {
       console.log(
-        `Processing ${totalFiles} files with concurrency ${effectiveConcurrency}...`
+        `Processing ${totalFiles} total modules with concurrency ${effectiveConcurrency}...`
       );
     }
 
     const limit = pLimit(effectiveConcurrency);
 
-    async function processFile(file: { path: string }, index: number) {
+    async function processFile(file: { path: string; sourcemapService?: SourcemapService }, index: number) {
       try {
         console.log(`Processing file ${index + 1}/${totalFiles}`);
 
@@ -73,7 +82,7 @@ export async function unminify(
         }
 
         const formattedCode = await plugins.reduce(
-          (p, next) => p.then((c) => next(c, sourcemapService)),
+          (p, next) => p.then((c) => next(c, file.sourcemapService)),
           Promise.resolve(code)
         );
 
@@ -88,11 +97,13 @@ export async function unminify(
     }
 
     await Promise.all(
-      extractedFiles.map((file, i) => limit(() => processFile(file, i)))
+      allExtractedFiles.map((file, i) => limit(() => processFile(file, i)))
     );
   } finally {
-    if (sourcemapService) {
-      sourcemapService.destroy();
+    // Clean up all sourcemap services
+    const services = new Set(allExtractedFiles.map(f => f.sourcemapService).filter(Boolean));
+    for (const service of services) {
+      service?.destroy();
     }
   }
 
