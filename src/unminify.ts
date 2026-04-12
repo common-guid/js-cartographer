@@ -10,6 +10,7 @@ import { ApiAnalyzer } from "./services/api-analyzer/index.js";
 import { pLimit } from "./concurrency.js";
 import { SourcemapService } from "./services/sourcemap/index.js";
 import { InputTask } from "./services/discovery/index.js";
+import { StateCache } from "./services/cache/index.js";
 
 export const DEFAULT_FILE_CONCURRENCY = 3;
 
@@ -21,6 +22,8 @@ export async function unminify(
   fileConcurrency: number = DEFAULT_FILE_CONCURRENCY
 ) {
   const allExtractedFiles: { path: string; sourcemapService?: SourcemapService }[] = [];
+  const stateCache = new StateCache(outputDir);
+  await stateCache.init();
 
   console.log(`[Batch] Processing ${tasks.length} input chunks...`);
 
@@ -75,6 +78,12 @@ export async function unminify(
           return;
         }
 
+        // Check cache
+        if (await stateCache.isCompleted(file.path, code)) {
+          console.log(`[Cache] Skipping already processed file ${file.path}`);
+          return;
+        }
+
         // Pre-processing: run sanitizer before the LLM plugin chain
         if (sanitizer) {
           const sanitized = await sanitizer.transform(code, file.path);
@@ -90,6 +99,7 @@ export async function unminify(
         verbose.log("Output: ", formattedCode);
 
         await fs.writeFile(file.path, formattedCode);
+        await stateCache.markAsCompleted(file.path, code);
       } catch (error) {
         console.error(`[Error] Failed to process ${file.path}:`, error);
         // We don't rethrow here because we want Promise.all to continue with other files
