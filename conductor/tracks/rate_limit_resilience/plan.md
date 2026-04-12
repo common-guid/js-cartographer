@@ -20,6 +20,6 @@
 - [x] If a 429 occurs, trigger `keyManager.markKeyAsFailed` and immediately retry with a new key if available. (07004ae)
 
 ## 4. Verification & Testing
-- [ ] Unit tests for `KeyManager` rotation and failover.
-- [ ] Unit tests for `StateCache` hashing and persistence.
-- [ ] Integration test simulating 429s and verifying successful completion via key rotation.
+- [x] Unit tests for `KeyManager` rotation and failover. (ba7abf2)
+- [x] Unit tests for `StateCache` hashing and persistence. (c929751)
+- [x] Integration test simulating 429s and verifying successful completion via key rotation. (2cc3f7d)
