@@ -12,8 +12,8 @@
 - [x] **Define the model configuration.** Determine the final download URL and naming convention for the "30b" model. (643907e)
 
 ## Integration
-- [~] **Update `src/local-models.ts`.** Add the `30b` model entry to the `MODELS` object, including the URL for the `unsloth` GGUF.
-- [ ] **Verify model download functionality.** Manually test `cartographer download 30b` to ensure the file downloads correctly and its integrity is maintained.
+- [x] **Update `src/local-models.ts`.** Add the `30b` model entry to the `MODELS` object, including the URL for the `unsloth` GGUF. (7fde68f)
+- [~] **Verify model download functionality.** Manually test `cartographer download 30b` to ensure the file downloads correctly and its integrity is maintained.
 - [ ] **Confirm LLM output.** Test the `30b` model with GBNF to ensure the output remains correctly formatted as a string/identifier.
 
 ## Validation
