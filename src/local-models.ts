@@ -5,7 +5,7 @@ import { url } from "./url.js";
 import { err } from "./cli-error.js";
 import { homedir } from "os";
 import { join } from "path";
-import { ChatWrapper, Llama3_1ChatWrapper } from "node-llama-cpp";
+import { ChatWrapper, Llama3_1ChatWrapper, QwenChatWrapper } from "node-llama-cpp";
 import { downloadFile } from "ipull";
 import { verbose } from "./verbose.js";
 
@@ -20,6 +20,10 @@ export const MODELS: { [modelName: string]: ModelDefinition } = {
   "8b": {
     url: url`https://huggingface.co/lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF/resolve/main/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf?download=true`,
     wrapper: new Llama3_1ChatWrapper()
+  },
+  "30b": {
+    url: url`https://huggingface.co/unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF/resolve/main/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf`,
+    wrapper: new QwenChatWrapper()
   }
 };
 
