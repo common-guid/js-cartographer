@@ -8,8 +8,15 @@ import { join } from "path";
 import { ChatWrapper, Llama3_1ChatWrapper, QwenChatWrapper } from "node-llama-cpp";
 import { downloadFile } from "ipull";
 import { verbose } from "./verbose.js";
+import { getConfig } from "./services/config/index.js";
 
-const MODEL_DIRECTORY = join(homedir(), ".cartographer", "models");
+async function getModelDirectory() {
+  const config = await getConfig();
+  if (config.modelsDirectory) {
+    return config.modelsDirectory;
+  }
+  return join(homedir(), ".cartographer", "models");
+}
 
 type ModelDefinition = { url: URL; wrapper?: ChatWrapper };
 
@@ -28,7 +35,8 @@ export const MODELS: { [modelName: string]: ModelDefinition } = {
 };
 
 async function ensureModelDirectory() {
-  await fs.mkdir(MODEL_DIRECTORY, { recursive: true });
+  const directory = await getModelDirectory();
+  await fs.mkdir(directory, { recursive: true });
 }
 
 export function getModelWrapper(model: string) {
@@ -45,7 +53,7 @@ export async function downloadModel(model: string) {
     err(`Model ${model} not found`);
   }
 
-  const path = getModelPath(model);
+  const path = await getModelPath(model);
 
   if (existsSync(path)) {
     console.log(`Model "${model}" already downloaded`);
@@ -68,16 +76,17 @@ export async function downloadModel(model: string) {
 
 export const DEFAULT_MODEL = Object.keys(MODELS)[0];
 
-export function getModelPath(model: string) {
+export async function getModelPath(model: string) {
   if (!(model in MODELS)) {
     err(`Model ${model} not found`);
   }
   const filename = basename(MODELS[model].url.pathname);
-  return `${MODEL_DIRECTORY}/${filename}`;
+  const directory = await getModelDirectory();
+  return `${directory}/${filename}`;
 }
 
-export function getEnsuredModelPath(model: string) {
-  const path = getModelPath(model);
+export async function getEnsuredModelPath(model: string) {
+  const path = await getModelPath(model);
   if (!existsSync(path)) {
     err(
       `Model "${model}" not found. Run "cartographer download ${model}" to download the model.`

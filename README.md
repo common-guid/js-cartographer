@@ -238,7 +238,7 @@ npm start -- download 2b
 npm start -- download 8b
 ```
 
-Models are stored in `~/.cartographer/models/`.
+Models are stored in `~/.cartographer/models/` by default (see [Configuration](#configuration-file-cartographerrcjson) to customize).
 
 | Model key | Model | Size |
 |-----------|-------|------|
@@ -604,6 +604,8 @@ Copy `.env.example` to `.env` and fill in the keys you need:
 cp .env.example .env
 ```
 
+### Environment Variables
+
 | Variable | Used by | Description |
 |----------|---------|-------------|
 | `OPENAI_API_KEY` | `cartographer openai` | OpenAI secret key |
@@ -611,8 +613,30 @@ cp .env.example .env
 | `GEMINI_API_KEY` | `cartographer gemini` | Google AI Studio key |
 | `OPENROUTER_API_KEY` | `cartographer openrouter` | OpenRouter key |
 | `OPENROUTER_BASE_URL` | `cartographer openrouter` | Override OpenRouter base URL |
+| `CARTOGRAPHER_CONFIG` | all | Path to a custom `.cartographerrc.json` file |
 | `MODEL` | local tests | Model key (`2b` or `8b`) used in test runs |
 | `VERBOSE` | all | Set to any value for verbose output in tests |
+
+### Configuration File (.cartographerrc.json)
+
+You can further customize JS Cartographer using a `.cartographerrc.json` file. The tool looks for this file in the following order:
+1. The path specified by the `CARTOGRAPHER_CONFIG` environment variable.
+2. The current working directory.
+3. Your home directory (`~/.cartographerrc.json`).
+
+#### Available Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `modelsDirectory` | Path where local GGUF models are stored | `~/.cartographer/models/` |
+
+**Example `.cartographerrc.json`:**
+
+```json
+{
+  "modelsDirectory": "/mnt/data/ai-models/cartographer"
+}
+```
 
 ---
 

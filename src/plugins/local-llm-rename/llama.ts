@@ -24,7 +24,7 @@ export async function llama(opts: {
   const disableGpu = opts.disableGpu ?? IS_CI;
   const llama = await getLlama({ gpu: disableGpu ? false : "auto" });
   const modelOpts: LlamaModelOptions = {
-    modelPath: getModelPath(opts?.model),
+    modelPath: await getModelPath(opts?.model),
     gpuLayers: disableGpu ? 0 : undefined
   };
   verbose.log("Loading model with options", modelOpts);
