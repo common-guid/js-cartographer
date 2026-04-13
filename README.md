@@ -244,6 +244,9 @@ Models are stored in `~/.cartographer/models/`.
 |-----------|-------|------|
 | `2b` | Phi-3.1-mini-4k-instruct Q4_K_M | ~2.4 GB |
 | `8b` | Meta-Llama-3.1-8B-Instruct Q4_K_M | ~4.9 GB |
+| `30b` | Qwen3-Coder-30B-A3B-Instruct Q4_K_M | ~18.6 GB |
+
+**Note on 30b (Qwen3-Coder):** This is a Mixture-of-Experts (MoE) model. While it only activates ~3B parameters per token for fast inference, the **entire 18.6 GB model** must fit in your VRAM or system RAM. Recommended for users with 24GB+ VRAM or 32GB+ system RAM.
 
 **Step 2 — Run deobfuscation**:
 
