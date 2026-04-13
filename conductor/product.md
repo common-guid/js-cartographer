@@ -14,6 +14,7 @@ To provide a powerful, AI-driven tool for transforming minified, obfuscated, or 
 - **Batch Directory Processing:** Automatically processes entire directories of JavaScript chunks and matches them with corresponding sourcemaps, enabling reconstruction of large-scale projects.
 - **Sourcemap Truth Injection:** Leverages existing \`.js.map\` files to provide locked, 'source of truth' identifier names, dramatically improving deobfuscation accuracy for partially mapped bundles.
 - **LLM Semantic Renaming:** Leverages large language models (Local, OpenAI, Gemini, OpenRouter) to assign meaningful names to variables and functions.
+- **Local LLM Performance:** Supports high-tier coding models like Qwen3-Coder-30B-A3B for superior local deobfuscation without API costs.
 - **Codebase Mapping:** Generates navigable dependency graphs (`module-graph.json`) and semantic call graphs (`call-graph.json`) to trace data flow and execution paths.
 - **Interactive Web Explorer:** Provides a UI for exploring the deobfuscated codebase and its associated graphs, designed for rapid security analysis.
 - **Black-Box API Reconstruction:** Automatically identifies backend API routes, methods, and parameters from client-side JS bundles. Generates a structured 'Virtual OpenAPI Spec' and provides integrated exploration within the Web UI.

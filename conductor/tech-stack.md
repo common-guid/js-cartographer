@@ -23,7 +23,7 @@
 - **OpenAI:** API-based model support.
 - **Google Gemini:** API-based model support.
 - **OpenRouter:** Multi-model API bridge support.
-- **Local Llama (via node-llama-cpp):** Fully local GGUF model execution.
+- **Local Llama (via node-llama-cpp):** Fully local GGUF model execution. Supports Mixture-of-Experts (MoE) architectures like Qwen3.
 
 ## Infrastructure & Tooling
 - **pkgroll:** Build tool for the CLI binary.
