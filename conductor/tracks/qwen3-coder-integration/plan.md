@@ -20,3 +20,6 @@
 - [x] **Manual testing on a fixture.** Infrastructure verified via unit tests; full model run deferred to user due to 18GB size. (7fde68f)
 - [x] **Performance benchmark.** Infrastructure verified; MoE architecture support confirmed in node-llama-cpp v3.18.1. (7fde68f)
 - [x] **Update `README.md` or help documentation.** Added 30b model to README with hardware requirements. (7fde68f)
+
+## Phase: Review Fixes
+- [x] Task: Apply review suggestions ebcdfbb
