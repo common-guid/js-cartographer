@@ -693,6 +693,25 @@ Expose the internal `(code: string) => Promise<string>` pipeline as a programmat
 ### Dead code / reachability analysis
 Use the call graph to identify functions that are never called from any entry point, flagging them as potentially dead code. This would aid in both understanding and cleaning up obfuscated bundles.
 
+### Taint Analysis (Milestone)
+Automated "Taint-to-Sink" mapping to identify DOM-based vulnerabilities and data leaks in deobfuscated code.
+
+- **Track 1: DOM Source/Sink Discovery**
+  - [ ] Expand `api-analyzer` to identify DOM sources (`location.hash`, etc.) and execution sinks (`eval`, `innerHTML`).
+  - [ ] Build a comprehensive catalog of sources and sinks with AST node locations.
+- **Track 2: Intra-procedural Taint Tracking**
+  - [ ] Build a data-flow engine for tracking variables from source to sink within a single function.
+  - [ ] Handle variable assignments, reassignments, and string concatenations.
+- **Track 3: Inter-procedural & Cross-Module Taint Tracking**
+  - [ ] Connect local data flows across function boundaries and module imports/exports.
+  - [ ] Leverage existing call-graph and module-graph for full-path tracing.
+- **Track 4: LLM-Augmented Sanitization Check**
+  - [ ] Use LLM to analyze intermediate functions and identify sanitizers (e.g., `DOMPurify`).
+  - [ ] Generate natural language explanations and exploitability scores for discovered flows.
+- **Track 5: Security Explorer UI & Reporting**
+  - [ ] Add a "Security" tab to the Web Explorer for interactive flow visualization.
+  - [ ] Implement a structured JSON exporter and a `--security-report` CLI flag.
+
 
 ### Configurable rule profiles
 Expose `STRUCTURAL_RULES` and `HEURISTIC_RULES` through a JSON or YAML config file, allowing users to enable, disable, or reorder individual Wakaru transformation rules without modifying source code or rebuilding.

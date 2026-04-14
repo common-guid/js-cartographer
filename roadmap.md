@@ -22,11 +22,14 @@ These features are currently under active development.
 - **[ACTIVE] State File Tracking:** Maintain a cache to resume interrupted runs without re-processing completed chunks.
 - **[ACTIVE] API Key Rotation:** Support multiple API keys with round-robin rotation and automatic failover on 429 errors.
 
-### 2. Automated "Taint-to-Sink" Mapping
-**Effort:** Very High
-**Objective:** Trace sensitive data from user-controlled "sources" to dangerous "sinks" using LLM-augmented flow analysis.
-- **[ACTIVE] Sink/Source Identification:** Labeling browser sinks (`eval`, `innerHTML`) and sources (`location.hash`).
-- **[ACTIVE] Cross-Module Flow:** Tracking data movement across modules via the recovered call graph.
+### 2. Taint Analysis (Milestone)
+**Effort:** Extreme
+**Objective:** Automated "Taint-to-Sink" mapping to identify DOM-based vulnerabilities and data leaks in deobfuscated code.
+- **[TRACK] 1. DOM Source/Sink Discovery:** Expand `api-analyzer` to identify DOM sources (`location.hash`, etc.) and execution sinks (`eval`, `innerHTML`).
+- **[TRACK] 2. Intra-procedural Taint Tracking:** Build a data-flow engine for tracking variables from source to sink within a single function.
+- **[TRACK] 3. Inter-procedural & Cross-Module Taint Tracking:** Connect local data flows across function boundaries and module imports/exports.
+- **[TRACK] 4. LLM-Augmented Sanitization Check:** Use LLM to analyze intermediate functions and identify sanitizers (e.g., `DOMPurify`).
+- **[TRACK] 5. Security Explorer UI & Reporting:** Add a "Security" tab to the Web Explorer for interactive flow visualization and structured reporting.
 
 ### 3. Qwen3-Coder Local Model Integration
 **Effort:** Medium
