@@ -7,6 +7,7 @@ import {
 import { Gbnf } from "./gbnf.js";
 import { getModelPath, getModelWrapper } from "../../local-models.js";
 import { verbose } from "../../verbose.js";
+import { withRetry } from "../../concurrency.js";
 
 export type Prompt = (
   systemPrompt: string,
@@ -33,12 +34,25 @@ export async function llama(opts: {
 
   const context = await model.createContext({ 
     seed: opts?.seed,
-    sequences: Math.max(1, (opts.sequences ?? 1) + 2)
+    sequences: Math.max(1, (opts.sequences ?? 1) * 2 + 2)
   });
 
   return async (systemPrompt, userPrompt, responseGrammar) => {
+    const sequence = await withRetry(async () => context.getSequence(), {
+      maxAttempts: 50,
+      initialDelayMs: 200,
+      backoffFactor: 1.1,
+      onRetry: (err) => {
+        if (err instanceof Error && err.message.includes("No sequences left")) {
+          verbose.log("No sequences left, waiting for one to become available...");
+        } else {
+          throw err;
+        }
+      }
+    });
+
     const session = new LlamaChatSession({
-      contextSequence: context.getSequence(),
+      contextSequence: sequence,
       autoDisposeSequence: true,
       systemPrompt,
       chatWrapper: getModelWrapper(opts.model)

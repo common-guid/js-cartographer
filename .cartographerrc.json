@@ -1,1 +1,3 @@
-{ "modelsDirectory": "/tmp/cartographer-models" }
+{
+"modelsDirectory": "/media/guid/HD_Storage/LLM_models/"
+}
