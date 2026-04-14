@@ -1,13 +1,19 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { findApiSinks, findSecurityFindings, SecurityFinding } from "./sink-discovery.js";
+import { findIntraProceduralFlows, TaintFlow } from "./intra-taint.js";
 import { buildApiSurface } from "./surface-builder.js";
 import { ApiSurface } from "./types.js";
 
 export class ApiAnalyzer {
-  async build(outputDir: string): Promise<{ apiSurface: ApiSurface; securityFindings: (SecurityFinding & { file: string })[] }> {
+  async build(outputDir: string): Promise<{ 
+    apiSurface: ApiSurface; 
+    securityFindings: (SecurityFinding & { file: string })[];
+    taintFlows: (TaintFlow & { file: string })[];
+  }> {
     const sinks: any[] = [];
     const securityFindings: (SecurityFinding & { file: string })[] = [];
+    const taintFlows: (TaintFlow & { file: string })[] = [];
     const files = await this.listFiles(outputDir);
 
     for (const file of files) {
@@ -16,16 +22,19 @@ export class ApiAnalyzer {
       
       const fileSinks = await findApiSinks(code);
       const fileSecurityFindings = await findSecurityFindings(code);
+      const fileTaintFlows = await findIntraProceduralFlows(code);
       
-      // Enrich sinks with file info
+      // Enrich with file info
       const relativePath = path.relative(outputDir, file);
       sinks.push(...fileSinks.map(s => ({ ...s, file: relativePath })));
       securityFindings.push(...fileSecurityFindings.map(f => ({ ...f, file: relativePath })));
+      taintFlows.push(...fileTaintFlows.map(t => ({ ...t, file: relativePath })));
     }
 
     return {
       apiSurface: buildApiSurface(sinks),
-      securityFindings: securityFindings
+      securityFindings: securityFindings,
+      taintFlows: taintFlows
     };
   }
 

@@ -129,7 +129,7 @@ export async function unminify(
   // Build API Surface & Security Findings
   console.log("[Phase 6] Reconstructing API Surface & Security Findings...");
   const apiAnalyzer = new ApiAnalyzer();
-  const { apiSurface, securityFindings } = await apiAnalyzer.build(outputDir);
+  const { apiSurface, securityFindings, taintFlows } = await apiAnalyzer.build(outputDir);
   
   const apiSurfacePath = path.join(outputDir, "api-surface.json");
   await fs.writeFile(apiSurfacePath, JSON.stringify(apiSurface, null, 2));
@@ -139,11 +139,23 @@ export async function unminify(
   await fs.writeFile(securityFindingsPath, JSON.stringify(securityFindings, null, 2));
   console.log(`[Security] ${securityFindings.length} findings saved to ${securityFindingsPath}`);
 
-  if (securityFindings.length > 0 && process.env.VERBOSE) {
+  const taintFlowsPath = path.join(outputDir, "taint-flows.json");
+  await fs.writeFile(taintFlowsPath, JSON.stringify(taintFlows, null, 2));
+  console.log(`[Security] ${taintFlows.length} taint flows discovered and saved to ${taintFlowsPath}`);
+
+  if (process.env.VERBOSE) {
+    if (securityFindings.length > 0) {
       console.log("[Security] Findings Summary:");
       for (const finding of securityFindings) {
-          console.log(`- ${finding.type.toUpperCase()}: ${finding.name} in ${finding.file}:${finding.loc?.line}`);
+        console.log(`- ${finding.type.toUpperCase()}: ${finding.name} in ${finding.file}:${finding.loc?.line}`);
       }
+    }
+    if (taintFlows.length > 0) {
+      console.log("[Security] Taint Flows Summary:");
+      for (const flow of taintFlows) {
+        console.log(`- FLOW: ${flow.source.name} -> ${flow.sink.name} in ${flow.file}:${flow.sink.loc?.line}`);
+      }
+    }
   }
 
   console.log(`Done! You can find your unminified code in ${outputDir}`);
