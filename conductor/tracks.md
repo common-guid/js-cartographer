@@ -5,7 +5,7 @@ This file tracks all major tracks for the project. Each track has its own detail
 ---
 
 - **Milestone: Taint Analysis**
-  - [ ] **Track 1: DOM Source/Sink Discovery**
+  - [x] **Track 1: DOM Source/Sink Discovery**
     *Link: [./tracks/taint_discovery/](./tracks/taint_discovery/)*
   - [ ] **Track 2: Intra-procedural Taint Tracking**
     *Link: [./tracks/intra_taint/](./tracks/intra_taint/)*
