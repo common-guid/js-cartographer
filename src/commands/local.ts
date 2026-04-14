@@ -71,7 +71,8 @@ export const local = cli()
     const prompt = await llama({
       model: opts.model,
       disableGpu: opts.disableGpu,
-      seed: opts.seed ? parseInt(opts.seed) : undefined
+      seed: opts.seed ? parseInt(opts.seed) : undefined,
+      sequences: parseNumber(opts.fileConcurrency)
     });
     const sanitizer = new WakaruSanitizer({
       enabled: opts.sanitizer !== false,

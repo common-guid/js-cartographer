@@ -20,6 +20,7 @@ export async function llama(opts: {
   seed?: number;
   model: string;
   disableGpu?: boolean;
+  sequences?: number;
 }): Promise<Prompt> {
   const disableGpu = opts.disableGpu ?? IS_CI;
   const llama = await getLlama({ gpu: disableGpu ? false : "auto" });
@@ -30,7 +31,10 @@ export async function llama(opts: {
   verbose.log("Loading model with options", modelOpts);
   const model = await llama.loadModel(modelOpts);
 
-  const context = await model.createContext({ seed: opts?.seed });
+  const context = await model.createContext({ 
+    seed: opts?.seed,
+    sequences: Math.max(1, (opts.sequences ?? 1) + 2)
+  });
 
   return async (systemPrompt, userPrompt, responseGrammar) => {
     const session = new LlamaChatSession({
@@ -39,14 +43,17 @@ export async function llama(opts: {
       systemPrompt,
       chatWrapper: getModelWrapper(opts.model)
     });
-    const response = await session.promptWithMeta(userPrompt, {
-      temperature: 0.8,
-      grammar: new LlamaGrammar(llama, {
-        grammar: `${responseGrammar}`
-      }),
-      stopOnAbortSignal: true
-    });
-    session.dispose();
-    return responseGrammar.parseResult(response.responseText);
+    try {
+      const response = await session.promptWithMeta(userPrompt, {
+        temperature: 0.8,
+        grammar: new LlamaGrammar(llama, {
+          grammar: `${responseGrammar}`
+        }),
+        stopOnAbortSignal: true
+      });
+      return responseGrammar.parseResult(response.responseText);
+    } finally {
+      session.dispose();
+    }
   };
 }
