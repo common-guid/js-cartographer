@@ -15,11 +15,12 @@ describe("ApiAnalyzer", () => {
       );
 
       const analyzer = new ApiAnalyzer();
-      const surface = await analyzer.build(tmpDir);
+      const { apiSurface: surface, securityFindings } = await analyzer.build(tmpDir);
 
       assert.strictEqual(surface.endpoints.length, 2);
       assert.ok(surface.endpoints.find(e => e.path === "/api/users"));
       assert.ok(surface.endpoints.find(e => e.path === "/api/posts" && e.method === "POST"));
+      assert.strictEqual(securityFindings.length, 2); // 2 API sinks
     } finally {
       await fs.rm(tmpDir, { recursive: true, force: true });
     }

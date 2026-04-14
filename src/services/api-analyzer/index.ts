@@ -1,25 +1,32 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { findApiSinks } from "./sink-discovery.js";
+import { findApiSinks, findSecurityFindings, SecurityFinding } from "./sink-discovery.js";
 import { buildApiSurface } from "./surface-builder.js";
 import { ApiSurface } from "./types.js";
 
 export class ApiAnalyzer {
-  async build(outputDir: string): Promise<ApiSurface> {
+  async build(outputDir: string): Promise<{ apiSurface: ApiSurface; securityFindings: (SecurityFinding & { file: string })[] }> {
     const sinks: any[] = [];
+    const securityFindings: (SecurityFinding & { file: string })[] = [];
     const files = await this.listFiles(outputDir);
 
     for (const file of files) {
       if (!file.endsWith(".js")) continue;
       const code = await fs.readFile(file, "utf-8");
+      
       const fileSinks = await findApiSinks(code);
+      const fileSecurityFindings = await findSecurityFindings(code);
       
       // Enrich sinks with file info
       const relativePath = path.relative(outputDir, file);
       sinks.push(...fileSinks.map(s => ({ ...s, file: relativePath })));
+      securityFindings.push(...fileSecurityFindings.map(f => ({ ...f, file: relativePath })));
     }
 
-    return buildApiSurface(sinks);
+    return {
+      apiSurface: buildApiSurface(sinks),
+      securityFindings: securityFindings
+    };
   }
 
   private async listFiles(dir: string): Promise<string[]> {

@@ -126,13 +126,25 @@ export async function unminify(
   await fs.writeFile(callGraphPath, JSON.stringify(callGraph, null, 2));
   console.log(`[CallGraph] Graph data saved to ${callGraphPath}`);
 
-  // Build API Surface (api-reconstruction track)
-  console.log("[API] Reconstructing API Surface...");
+  // Build API Surface & Security Findings
+  console.log("[Phase 6] Reconstructing API Surface & Security Findings...");
   const apiAnalyzer = new ApiAnalyzer();
-  const apiSurface = await apiAnalyzer.build(outputDir);
+  const { apiSurface, securityFindings } = await apiAnalyzer.build(outputDir);
+  
   const apiSurfacePath = path.join(outputDir, "api-surface.json");
   await fs.writeFile(apiSurfacePath, JSON.stringify(apiSurface, null, 2));
   console.log(`[API] API surface data saved to ${apiSurfacePath}`);
+
+  const securityFindingsPath = path.join(outputDir, "security-findings.json");
+  await fs.writeFile(securityFindingsPath, JSON.stringify(securityFindings, null, 2));
+  console.log(`[Security] ${securityFindings.length} findings saved to ${securityFindingsPath}`);
+
+  if (securityFindings.length > 0 && process.env.VERBOSE) {
+      console.log("[Security] Findings Summary:");
+      for (const finding of securityFindings) {
+          console.log(`- ${finding.type.toUpperCase()}: ${finding.name} in ${finding.file}:${finding.loc?.line}`);
+      }
+  }
 
   console.log(`Done! You can find your unminified code in ${outputDir}`);
 }

@@ -17,6 +17,144 @@ export interface ApiSink {
   body?: Record<string, string>;
 }
 
+export type SecurityFindingType = "source" | "sink";
+
+export interface SecurityFinding {
+  type: SecurityFindingType;
+  category: "DOM" | "API";
+  name: string;
+  loc?: { line: number; column: number };
+  snippet?: string;
+  url?: string;
+  method?: string;
+  body?: Record<string, string>;
+}
+
+export async function findSecurityFindings(code: string): Promise<SecurityFinding[]> {
+  const findings: SecurityFinding[] = [];
+
+  try {
+    const ast = await parseAsync(code, { sourceType: "unambiguous" });
+    if (!ast) return [];
+
+    traverse(ast, {
+      CallExpression(path) {
+        const { node } = path;
+
+        // DOM Sinks: eval, setTimeout, setInterval
+        if (node.callee.type === "Identifier") {
+          const name = node.callee.name;
+          if (name === "eval") {
+            findings.push({ type: "sink", category: "DOM", name: "eval", loc: node.loc?.start });
+          } else if (name === "setTimeout" || name === "setInterval") {
+            if (node.arguments.length > 0 && node.arguments[0].type === "StringLiteral") {
+              findings.push({ type: "sink", category: "DOM", name, loc: node.loc?.start });
+            }
+          }
+        }
+
+        // DOM Sinks: document.write
+        if (
+          node.callee.type === "MemberExpression" &&
+          node.callee.object.type === "Identifier" &&
+          node.callee.object.name === "document" &&
+          node.callee.property.type === "Identifier" &&
+          (node.callee.property.name === "write" || node.callee.property.name === "writeln")
+        ) {
+          findings.push({
+            type: "sink",
+            category: "DOM",
+            name: `document.${node.callee.property.name}`,
+            loc: node.loc?.start,
+          });
+        }
+
+        // DOM Sources: localStorage.getItem, sessionStorage.getItem
+        if (
+          node.callee.type === "MemberExpression" &&
+          node.callee.object.type === "Identifier" &&
+          (node.callee.object.name === "localStorage" || node.callee.object.name === "sessionStorage") &&
+          node.callee.property.type === "Identifier" &&
+          node.callee.property.name === "getItem"
+        ) {
+          findings.push({
+            type: "source",
+            category: "DOM",
+            name: node.callee.object.name,
+            loc: node.loc?.start,
+          });
+        }
+      },
+      AssignmentExpression(path) {
+        const { node } = path;
+        // DOM Sinks: innerHTML, outerHTML
+        if (
+          node.left.type === "MemberExpression" &&
+          node.left.property.type === "Identifier" &&
+          (node.left.property.name === "innerHTML" || node.left.property.name === "outerHTML")
+        ) {
+          findings.push({
+            type: "sink",
+            category: "DOM",
+            name: node.left.property.name,
+            loc: node.loc?.start,
+          });
+        }
+      },
+      MemberExpression(path) {
+        const { node } = path;
+        // DOM Sources: location.hash, location.search, etc.
+        if (
+          node.object.type === "Identifier" &&
+          node.object.name === "location" &&
+          node.property.type === "Identifier" &&
+          ["hash", "search", "href", "pathname"].includes(node.property.name)
+        ) {
+          // Avoid double counting if it's an assignment (though location properties are rarely sinks in this way)
+          findings.push({
+            type: "source",
+            category: "DOM",
+            name: `location.${node.property.name}`,
+            loc: node.loc?.start,
+          });
+        }
+        // DOM Sources: document.cookie
+        if (
+          node.object.type === "Identifier" &&
+          node.object.name === "document" &&
+          node.property.type === "Identifier" &&
+          node.property.name === "cookie"
+        ) {
+          findings.push({
+            type: "source",
+            category: "DOM",
+            name: "document.cookie",
+            loc: node.loc?.start,
+          });
+        }
+      },
+    });
+  } catch {
+    // Non-fatal
+  }
+
+  // Include API sinks
+  const apiSinks = await findApiSinks(code);
+  for (const sink of apiSinks) {
+    findings.push({
+      type: "sink",
+      category: "API",
+      name: `${sink.method} ${sink.url}`,
+      loc: sink.loc,
+      url: sink.url,
+      method: sink.method,
+      body: sink.body,
+    });
+  }
+
+  return findings;
+}
+
 export async function findApiSinks(code: string): Promise<ApiSink[]> {
   const sinks: ApiSink[] = [];
 
