@@ -129,7 +129,7 @@ export async function unminify(
   // Build API Surface & Security Findings
   console.log("[Phase 6] Reconstructing API Surface & Security Findings...");
   const apiAnalyzer = new ApiAnalyzer();
-  const { apiSurface, securityFindings, taintFlows } = await apiAnalyzer.build(outputDir);
+  const { apiSurface, securityFindings, taintFlows } = await apiAnalyzer.build(outputDir, callGraph);
   
   const apiSurfacePath = path.join(outputDir, "api-surface.json");
   await fs.writeFile(apiSurfacePath, JSON.stringify(apiSurface, null, 2));

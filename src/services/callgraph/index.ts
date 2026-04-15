@@ -56,18 +56,35 @@ export class CallGraphBuilder {
       // 1. Map Imports: import { login } from './auth'
       ImportDeclaration(pathNode) {
         const source = pathNode.node.source.value; // "./auth"
+        const resolvedPath = self.resolvePath(relativePath, source);
 
         pathNode.node.specifiers.forEach((spec) => {
           if (
             spec.type === "ImportSpecifier" &&
             spec.imported.type === "Identifier"
           ) {
-            // Resolve path (simplified for CLI)
-            const resolvedPath = self.resolvePath(relativePath, source);
-            fileImports[spec.local.name] =
-              `${resolvedPath}:${spec.imported.name}`;
+            fileImports[spec.local.name] = `${resolvedPath}:${spec.imported.name}`;
+          } else if (spec.type === "ImportDefaultSpecifier") {
+            fileImports[spec.local.name] = `${resolvedPath}:default`;
+          } else if (spec.type === "ImportNamespaceSpecifier") {
+            fileImports[spec.local.name] = resolvedPath;
           }
         });
+      },
+
+      // Handle CommonJS require
+      VariableDeclarator(pathNode) {
+        if (
+          pathNode.node.init?.type === "CallExpression" &&
+          pathNode.node.init.callee.type === "Identifier" &&
+          pathNode.node.init.callee.name === "require" &&
+          pathNode.node.init.arguments[0]?.type === "StringLiteral" &&
+          pathNode.node.id.type === "Identifier"
+        ) {
+          const source = pathNode.node.init.arguments[0].value;
+          const resolvedPath = self.resolvePath(relativePath, source);
+          fileImports[pathNode.node.id.name] = resolvedPath;
+        }
       },
 
       // 2. Register Function Definitions
@@ -88,7 +105,6 @@ export class CallGraphBuilder {
       // 3. Record Calls
       CallExpression(pathNode) {
         const callee = pathNode.node.callee;
-        // Need to find which function WE are currently inside (Context)
         const parentFunc = pathNode.getFunctionParent();
         const callerName =
           parentFunc?.node?.id?.type === "Identifier"
@@ -99,21 +115,36 @@ export class CallGraphBuilder {
         if (callee.type === "Identifier") {
           const calledName = callee.name;
 
-          // Case A: Is it an imported function?
           if (fileImports[calledName]) {
-            // It's external! Link to the resolved ID.
             self.graph.edges.push({
               from: callerId,
               to: fileImports[calledName],
               type: "external"
             });
-          }
-          // Case B: Is it local?
-          else {
+          } else {
             self.graph.edges.push({
               from: callerId,
               to: `${relativePath}:${calledName}`,
               type: "internal"
+            });
+          }
+        } else if (
+          callee.type === "MemberExpression" &&
+          callee.object.type === "Identifier" &&
+          callee.property.type === "Identifier"
+        ) {
+          const objectName = callee.object.name;
+          const propertyName = callee.property.name;
+
+          if (fileImports[objectName]) {
+            const target = fileImports[objectName].includes(":")
+              ? fileImports[objectName]
+              : `${fileImports[objectName]}:${propertyName}`;
+
+            self.graph.edges.push({
+              from: callerId,
+              to: target,
+              type: "external"
             });
           }
         }

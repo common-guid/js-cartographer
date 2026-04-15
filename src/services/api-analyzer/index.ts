@@ -1,40 +1,44 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { findApiSinks, findSecurityFindings, SecurityFinding } from "./sink-discovery.js";
-import { findIntraProceduralFlows, TaintFlow } from "./intra-taint.js";
+import { InterProceduralAnalyzer, TaintFlow } from "./inter-taint.js";
 import { buildApiSurface } from "./surface-builder.js";
 import { ApiSurface } from "./types.js";
+import { CallGraphData } from "../callgraph/types.js";
 
 export class ApiAnalyzer {
-  async build(outputDir: string): Promise<{ 
+  async build(outputDir: string, callGraph: CallGraphData = { nodes: {}, edges: [] }): Promise<{ 
     apiSurface: ApiSurface; 
     securityFindings: (SecurityFinding & { file: string })[];
     taintFlows: (TaintFlow & { file: string })[];
   }> {
     const sinks: any[] = [];
     const securityFindings: (SecurityFinding & { file: string })[] = [];
-    const taintFlows: (TaintFlow & { file: string })[] = [];
     const files = await this.listFiles(outputDir);
+    const fileEntries: { path: string; code: string }[] = [];
 
     for (const file of files) {
       if (!file.endsWith(".js")) continue;
       const code = await fs.readFile(file, "utf-8");
+      const relativePath = path.relative(outputDir, file);
       
+      fileEntries.push({ path: relativePath, code });
+
       const fileSinks = await findApiSinks(code);
       const fileSecurityFindings = await findSecurityFindings(code);
-      const fileTaintFlows = await findIntraProceduralFlows(code);
       
       // Enrich with file info
-      const relativePath = path.relative(outputDir, file);
       sinks.push(...fileSinks.map(s => ({ ...s, file: relativePath })));
       securityFindings.push(...fileSecurityFindings.map(f => ({ ...f, file: relativePath })));
-      taintFlows.push(...fileTaintFlows.map(t => ({ ...t, file: relativePath })));
     }
+
+    const interAnalyzer = new InterProceduralAnalyzer();
+    const flows = await interAnalyzer.analyzeProject(fileEntries, callGraph);
 
     return {
       apiSurface: buildApiSurface(sinks),
       securityFindings: securityFindings,
-      taintFlows: taintFlows
+      taintFlows: flows.map(f => ({ ...f, file: f.sink.file || "" }))
     };
   }
 

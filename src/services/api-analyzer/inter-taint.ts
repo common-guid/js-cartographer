@@ -60,6 +60,13 @@ export class InterProceduralAnalyzer {
             const summary = self.summarizeFunction(path, file.path, fileSources, fileSinks);
             summaries.set(summary.id, summary);
           }
+        },
+        ExportDefaultDeclaration(path) {
+          const declaration = path.get("declaration");
+          if (declaration.isFunctionDeclaration() || declaration.isFunctionExpression() || declaration.isArrowFunctionExpression()) {
+            const summary = self.summarizeFunction(declaration, file.path, fileSources, fileSinks, "default");
+            summaries.set(summary.id, summary);
+          }
         }
       });
     }
@@ -74,7 +81,9 @@ export class InterProceduralAnalyzer {
 
           if (node.callee.type === "Identifier") {
             const funcName = node.callee.name;
-            // Find in call-graph or local summaries
+            calleeId = self.resolveCalleeId(filePath, funcName, path, callGraph);
+          } else if (node.callee.type === "MemberExpression" && node.callee.property.type === "Identifier") {
+            const funcName = node.callee.property.name;
             calleeId = self.resolveCalleeId(filePath, funcName, path, callGraph);
           }
 
@@ -121,28 +130,35 @@ export class InterProceduralAnalyzer {
     const callerId = `${filePath}:${callerName}`;
 
     // 2. Check call-graph for edges from this caller
-    const edge = callGraph.edges.find(e => e.from === callerId && (e.to.endsWith(`:${funcName}`) || e.to === funcName));
+    const edges = callGraph.edges.filter(e => e.from === callerId);
+    
+    // Priority 1: Direct name match
+    let edge = edges.find(e => e.to.endsWith(`:${funcName}`) || e.to === funcName);
+    if (edge) return edge.to;
+
+    // Priority 2: Default export match (if we're calling a local identifier that corresponds to a default import)
+    edge = edges.find(e => e.to.endsWith(":default"));
     if (edge) return edge.to;
 
     // 3. Fallback to local file if not in call-graph
     return `${filePath}:${funcName}`;
   }
 
-  private summarizeFunction(path: any, filePath: string, sources: SecurityFinding[], sinks: SecurityFinding[]): FunctionSummary {
-    const name = path.node.id.name;
+  private summarizeFunction(path: any, filePath: string, sources: SecurityFinding[], sinks: SecurityFinding[], overrideName?: string): FunctionSummary {
+    const name = overrideName || path.node.id?.name || "anonymous";
     const id = `${filePath}:${name}`;
     const paramsToSinks = new Map<number, SecurityFinding[]>();
     const paramsToReturn = new Set<number>();
     const returnSources: SecurityFinding[] = [];
 
-    const params = path.node.params;
+    const params = path.node.params || [];
     const self = this;
     
     // Find sinks reachable from params
     path.traverse({
       CallExpression(innerPath: any) {
         const { node } = innerPath;
-        const sinkFinding = sinks.find(s => s.loc?.line === node.loc?.start.line && s.loc?.column === node.loc?.start.column);
+        const sinkFinding = sinks.find(s => s.file === filePath && s.loc?.line === node.loc?.start.line && s.loc?.column === node.loc?.start.column);
         if (sinkFinding) {
           node.arguments.forEach((arg: any, idx: number) => {
             params.forEach((param: any, pIdx: number) => {
@@ -167,7 +183,7 @@ export class InterProceduralAnalyzer {
         });
 
         // Direct source return
-        const argSources = sources.filter(s => s.loc?.line === arg.loc?.start.line && s.loc?.column === arg.loc?.start.column);
+        const argSources = sources.filter(s => s.file === filePath && s.loc?.line === arg.loc?.start.line && s.loc?.column === arg.loc?.start.column);
         returnSources.push(...argSources);
       }
     });
@@ -199,15 +215,24 @@ export class InterProceduralAnalyzer {
     }
 
     // 2. Call result?
-    if (node.type === "CallExpression" && node.callee.type === "Identifier") {
-      const calleeId = this.resolveCalleeId(filePath, node.callee.name, path, callGraph);
-      const summary = calleeId ? summaries.get(calleeId) : undefined;
-      
-      if (summary) {
-        foundSources.push(...summary.returnSources);
-        for (let i = 0; i < node.arguments.length; i++) {
-          if (summary.paramsToReturn.has(i)) {
-            foundSources.push(...this.traceTaint(node.arguments[i], path.get(`arguments.${i}`), sources, summaries, filePath, callGraph));
+    if (node.type === "CallExpression") {
+      let funcName: string | undefined;
+      if (node.callee.type === "Identifier") {
+        funcName = node.callee.name;
+      } else if (node.callee.type === "MemberExpression" && node.callee.property.type === "Identifier") {
+        funcName = node.callee.property.name;
+      }
+
+      if (funcName) {
+        const calleeId = this.resolveCalleeId(filePath, funcName, path, callGraph);
+        const summary = calleeId ? summaries.get(calleeId) : undefined;
+        
+        if (summary) {
+          foundSources.push(...summary.returnSources);
+          for (let i = 0; i < node.arguments.length; i++) {
+            if (summary.paramsToReturn.has(i)) {
+              foundSources.push(...this.traceTaint(node.arguments[i], path.get(`arguments.${i}`), sources, summaries, filePath, callGraph));
+            }
           }
         }
       }

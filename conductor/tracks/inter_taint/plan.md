@@ -2,8 +2,8 @@
 
 - [x] Task: Call-Graph Edge Tracking
     - [x] Integrate the call-graph into the data-flow engine to track parameters and return values.
-- [~] Task: Cross-Module Flow Mapping
-    - [ ] Use the module-graph to connect data flows through exports and imports.
+- [x] Task: Cross-Module Flow Mapping
+    - [x] Use the module-graph to connect data flows through exports and imports.
 - [ ] Task: Full Taint Path Reconstruction
     - [ ] Build the final "taint-to-sink" paths that span across multiple files.
 - [ ] Task: Integration Tests
