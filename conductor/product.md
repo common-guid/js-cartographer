@@ -20,6 +20,7 @@ To provide a powerful, AI-driven tool for transforming minified, obfuscated, or 
 - **Black-Box API Reconstruction:** Automatically identifies backend API routes, methods, and parameters from client-side JS bundles. Generates a structured 'Virtual OpenAPI Spec' and provides integrated exploration within the Web UI.
 - **Visualizations:** Generates ASCII trees and Mermaid flowcharts for call graph visualization.
 - **DOM Source/Sink Discovery:** Automatically identifies security-sensitive browser-specific sources (e.g., `location.hash`, `localStorage`, `cookies`) and sinks (e.g., `eval`, `document.write`, `innerHTML`) in JavaScript code, outputting a structured `security-findings.json` report.
+- **Intra-procedural Taint Tracking:** Automatically maps the flow of data from sources to sinks within a single function scope, generating a detailed `taint-flows.json` report to assist researchers in tracing potentially exploitable paths.
 - **Framework Awareness:** Detects frameworks (e.g., React, Express) to inject context-specific naming conventions into LLM prompts, speeding up structural comprehension.
 
 ## Architectural & Design Principles
