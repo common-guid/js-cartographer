@@ -1,0 +1,8 @@
+{
+  "track_id": "inter_taint",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-04-14T19:29:22Z",
+  "updated_at": "2026-04-14T19:29:22Z",
+  "description": "Connect local data flows across function boundaries and module boundaries."
+}
