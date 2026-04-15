@@ -5,8 +5,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 ---
 
 - **Milestone: Taint Analysis**
-  - [x] **Track 2: Intra-procedural Taint Tracking**
-    *Link: [./tracks/intra_taint/](./tracks/intra_taint/)*
   - [ ] **Track 3: Inter-procedural & Cross-Module Taint Tracking**
     *Link: [./tracks/inter_taint/](./tracks/inter_taint/)*
   - [ ] **Track 4: LLM-Augmented Sanitization Check**
