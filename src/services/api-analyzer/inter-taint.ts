@@ -13,6 +13,19 @@ const traverse: typeof babelTraverse.default.default = (
 export interface TaintFlow {
   source: SecurityFinding;
   sink: SecurityFinding;
+  path: TaintPathElement[];
+}
+
+export interface TaintPathElement {
+  file: string;
+  line: number;
+  column: number;
+  name: string;
+}
+
+interface ReconstructedSource {
+  finding: SecurityFinding;
+  path: TaintPathElement[];
 }
 
 export interface FileEntry {
@@ -23,9 +36,9 @@ export interface FileEntry {
 interface FunctionSummary {
   id: string; // "file.js:funcName"
   name: string;
-  paramsToSinks: Map<number, SecurityFinding[]>;
-  paramsToReturn: Set<number>;
-  returnSources: SecurityFinding[];
+  paramsToSinks: Map<number, { sink: SecurityFinding; path: TaintPathElement[] }[]>;
+  paramsToReturn: Map<number, TaintPathElement[]>; // param index -> path segment
+  returnSources: ReconstructedSource[];
 }
 
 export class InterProceduralAnalyzer {
@@ -78,12 +91,13 @@ export class InterProceduralAnalyzer {
         CallExpression(path) {
           const { node } = path;
           let calleeId: string | undefined;
+          let funcName: string | undefined;
 
           if (node.callee.type === "Identifier") {
-            const funcName = node.callee.name;
+            funcName = node.callee.name;
             calleeId = self.resolveCalleeId(filePath, funcName, path, callGraph);
           } else if (node.callee.type === "MemberExpression" && node.callee.property.type === "Identifier") {
-            const funcName = node.callee.property.name;
+            funcName = node.callee.property.name;
             calleeId = self.resolveCalleeId(filePath, funcName, path, callGraph);
           }
 
@@ -96,9 +110,13 @@ export class InterProceduralAnalyzer {
                 const argSources = self.traceTaint(arg, path.get(`arguments.${i}`), allSources, summaries, filePath, callGraph);
                 
                 const reachableSinks = summary.paramsToSinks.get(i) || [];
-                for (const source of argSources) {
-                  for (const sink of reachableSinks) {
-                    flows.push({ source, sink });
+                for (const as of argSources) {
+                  for (const rs of reachableSinks) {
+                    flows.push({ 
+                        source: as.finding, 
+                        sink: rs.sink, 
+                        path: [...as.path, { file: filePath, line: node.loc?.start.line || 0, column: node.loc?.start.column || 0, name: funcName! }, ...rs.path] 
+                    });
                   }
                 }
               }
@@ -111,8 +129,12 @@ export class InterProceduralAnalyzer {
             for (let i = 0; i < node.arguments.length; i++) {
               const arg = node.arguments[i];
               const argSources = self.traceTaint(arg, path.get(`arguments.${i}`), allSources, summaries, filePath, callGraph);
-              for (const source of argSources) {
-                flows.push({ source, sink: sinkFinding });
+              for (const as of argSources) {
+                flows.push({ 
+                    source: as.finding, 
+                    sink: sinkFinding, 
+                    path: [...as.path, { file: filePath, line: node.loc?.start.line || 0, column: node.loc?.start.column || 0, name: sinkFinding.name }] 
+                });
               }
             }
           }
@@ -147,9 +169,9 @@ export class InterProceduralAnalyzer {
   private summarizeFunction(path: any, filePath: string, sources: SecurityFinding[], sinks: SecurityFinding[], overrideName?: string): FunctionSummary {
     const name = overrideName || path.node.id?.name || "anonymous";
     const id = `${filePath}:${name}`;
-    const paramsToSinks = new Map<number, SecurityFinding[]>();
-    const paramsToReturn = new Set<number>();
-    const returnSources: SecurityFinding[] = [];
+    const paramsToSinks = new Map<number, { sink: SecurityFinding; path: TaintPathElement[] }[]>();
+    const paramsToReturn = new Map<number, TaintPathElement[]>();
+    const returnSources: ReconstructedSource[] = [];
 
     const params = path.node.params || [];
     const self = this;
@@ -164,7 +186,13 @@ export class InterProceduralAnalyzer {
             params.forEach((param: any, pIdx: number) => {
               if (param.type === "Identifier" && self.isInfluencedBy(arg, innerPath.get(`arguments.${idx}`), param.name)) {
                 const list = paramsToSinks.get(pIdx) || [];
-                list.push(sinkFinding);
+                const pathElement: TaintPathElement = { 
+                    file: filePath, 
+                    line: param.loc?.start.line || 0, 
+                    column: param.loc?.start.column || 0, 
+                    name: param.name 
+                };
+                list.push({ sink: sinkFinding, path: [pathElement] });
                 paramsToSinks.set(pIdx, list);
               }
             });
@@ -178,13 +206,26 @@ export class InterProceduralAnalyzer {
         // Param influence
         params.forEach((param: any, pIdx: number) => {
           if (param.type === "Identifier" && self.isInfluencedBy(arg, innerPath.get("argument"), param.name)) {
-            paramsToReturn.add(pIdx);
+            paramsToReturn.set(pIdx, [{ 
+                file: filePath, 
+                line: param.loc?.start.line || 0, 
+                column: param.loc?.start.column || 0, 
+                name: param.name 
+            }]);
           }
         });
 
         // Direct source return
         const argSources = sources.filter(s => s.file === filePath && s.loc?.line === arg.loc?.start.line && s.loc?.column === arg.loc?.start.column);
-        returnSources.push(...argSources);
+        returnSources.push(...argSources.map(s => ({ 
+            finding: s, 
+            path: [{ 
+                file: filePath, 
+                line: s.loc?.line || 0, 
+                column: s.loc?.column || 0, 
+                name: s.name 
+            }] 
+        })));
       }
     });
 
@@ -205,13 +246,16 @@ export class InterProceduralAnalyzer {
     return found;
   }
 
-  private traceTaint(node: any, path: any, sources: SecurityFinding[], summaries: Map<string, FunctionSummary>, filePath: string, callGraph: CallGraphData): SecurityFinding[] {
-    const foundSources: SecurityFinding[] = [];
+  private traceTaint(node: any, path: any, sources: SecurityFinding[], summaries: Map<string, FunctionSummary>, filePath: string, callGraph: CallGraphData): ReconstructedSource[] {
+    const foundSources: ReconstructedSource[] = [];
 
     // 1. Direct source?
     const directSource = sources.find(s => s.file === filePath && s.loc?.line === node.loc?.start.line && s.loc?.column === node.loc?.start.column);
     if (directSource) {
-      foundSources.push(directSource);
+      foundSources.push({ 
+          finding: directSource, 
+          path: [{ file: filePath, line: directSource.loc?.line || 0, column: directSource.loc?.column || 0, name: directSource.name }] 
+      });
     }
 
     // 2. Call result?
@@ -228,10 +272,24 @@ export class InterProceduralAnalyzer {
         const summary = calleeId ? summaries.get(calleeId) : undefined;
         
         if (summary) {
-          foundSources.push(...summary.returnSources);
+          // Direct return sources from summary
+          for (const rs of summary.returnSources) {
+            foundSources.push({ 
+                finding: rs.finding, 
+                path: [...rs.path, { file: filePath, line: node.loc?.start.line || 0, column: node.loc?.start.column || 0, name: funcName }] 
+            });
+          }
+          // Taint through parameters
           for (let i = 0; i < node.arguments.length; i++) {
             if (summary.paramsToReturn.has(i)) {
-              foundSources.push(...this.traceTaint(node.arguments[i], path.get(`arguments.${i}`), sources, summaries, filePath, callGraph));
+              const argSources = this.traceTaint(node.arguments[i], path.get(`arguments.${i}`), sources, summaries, filePath, callGraph);
+              const pathFromParam = summary.paramsToReturn.get(i)!;
+              for (const as of argSources) {
+                foundSources.push({ 
+                    finding: as.finding, 
+                    path: [...as.path, { file: filePath, line: node.loc?.start.line || 0, column: node.loc?.start.column || 0, name: funcName }, ...pathFromParam] 
+                });
+              }
             }
           }
         }
@@ -257,6 +315,6 @@ export class InterProceduralAnalyzer {
       }
     }
 
-    return Array.from(new Set(foundSources));
+    return foundSources;
   }
 }
