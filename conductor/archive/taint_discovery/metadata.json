@@ -1,0 +1,8 @@
+{
+  "track_id": "taint_discovery",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-04-14T19:29:15Z",
+  "updated_at": "2026-04-14T19:29:15Z",
+  "description": "Expand api-analyzer to identify DOM sources and execution sinks."
+}
