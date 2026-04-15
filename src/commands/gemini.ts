@@ -11,6 +11,8 @@ import { WakaruSanitizer } from "../services/sanitizer/index.js";
 import { DEFAULT_FILE_CONCURRENCY } from "../unminify.js";
 import { DiscoveryService } from "../services/discovery/index.js";
 import { stat } from "node:fs/promises";
+import { KeyManager } from "../services/key-manager/index.js";
+import { createGeminiClient } from "../services/api-analyzer/llm-client-factory.js";
 
 export const azure = cli()
   .name("gemini")
@@ -65,6 +67,7 @@ export const azure = cli()
     const apiKeys = (opts.apiKey ?? env("GEMINI_API_KEY")).split(",").map((k: string) => k.trim());
     const keyManager = new KeyManager(apiKeys);
     const contextWindowSize = parseNumber(opts.contextSize);
+    const llmClient = createGeminiClient(apiKeys[0], opts.model);
     const sanitizer = new WakaruSanitizer({
       enabled: opts.sanitizer !== false,
       useHeuristicNaming: opts.heuristicNaming !== false
@@ -83,6 +86,7 @@ export const azure = cli()
         prettier
       ],
       sanitizer,
-      parseNumber(opts.fileConcurrency)
+      parseNumber(opts.fileConcurrency),
+      llmClient
     );
   });

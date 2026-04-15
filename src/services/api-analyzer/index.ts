@@ -5,12 +5,17 @@ import { InterProceduralAnalyzer, TaintFlow } from "./inter-taint.js";
 import { buildApiSurface } from "./surface-builder.js";
 import { ApiSurface } from "./types.js";
 import { CallGraphData } from "../callgraph/types.js";
+import { LlmClient, LlmSanitizationService, FlowAnalysis } from "./llm-sanitization-service.js";
 
 export class ApiAnalyzer {
-  async build(outputDir: string, callGraph: CallGraphData = { nodes: {}, edges: [] }): Promise<{ 
+  async build(
+    outputDir: string, 
+    callGraph: CallGraphData = { nodes: {}, edges: [] },
+    llmClient?: LlmClient
+  ): Promise<{ 
     apiSurface: ApiSurface; 
     securityFindings: (SecurityFinding & { file: string })[];
-    taintFlows: (TaintFlow & { file: string })[];
+    taintFlows: (TaintFlow & { file: string; analysis?: FlowAnalysis | null })[];
   }> {
     const sinks: any[] = [];
     const securityFindings: (SecurityFinding & { file: string })[] = [];
@@ -35,10 +40,22 @@ export class ApiAnalyzer {
     const interAnalyzer = new InterProceduralAnalyzer();
     const flows = await interAnalyzer.analyzeProject(fileEntries, callGraph);
 
+    let analyzedFlows = flows.map(f => ({ ...f, file: f.sink.file || "" }));
+
+    if (llmClient && analyzedFlows.length > 0) {
+      console.log(`[Security] Analyzing ${analyzedFlows.length} taint flows with LLM...`);
+      const sanitizationService = new LlmSanitizationService(llmClient);
+      
+      analyzedFlows = await Promise.all(analyzedFlows.map(async (flow) => {
+        const analysis = await sanitizationService.explainFlow(flow);
+        return { ...flow, analysis };
+      }));
+    }
+
     return {
       apiSurface: buildApiSurface(sinks),
       securityFindings: securityFindings,
-      taintFlows: flows.map(f => ({ ...f, file: f.sink.file || "" }))
+      taintFlows: analyzedFlows
     };
   }
 

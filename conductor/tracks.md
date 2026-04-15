@@ -5,7 +5,7 @@ This file tracks all major tracks for the project. Each track has its own detail
 ---
 
 - **Milestone: Taint Analysis**
-  - [ ] **Track 4: LLM-Augmented Sanitization Check**
+  - [x] **Track 4: LLM-Augmented Sanitization Check**
     *Link: [./tracks/llm_sanitization/](./tracks/llm_sanitization/)*
   - [ ] **Track 5: Security Explorer UI & Reporting**
     *Link: [./tracks/taint_ui/](./tracks/taint_ui/)*

@@ -12,6 +12,7 @@ import { WakaruSanitizer } from "../services/sanitizer/index.js";
 import { DEFAULT_FILE_CONCURRENCY } from "../unminify.js";
 import { DiscoveryService } from "../services/discovery/index.js";
 import { stat } from "node:fs/promises";
+import { createLlamaClient } from "../services/api-analyzer/llm-client-factory.js";
 
 export const local = cli()
   .name("local")
@@ -74,6 +75,7 @@ export const local = cli()
       seed: opts.seed ? parseInt(opts.seed) : undefined,
       sequences: parseNumber(opts.fileConcurrency)
     });
+    const llmClient = createLlamaClient(prompt);
     const sanitizer = new WakaruSanitizer({
       enabled: opts.sanitizer !== false,
       useHeuristicNaming: opts.heuristicNaming !== false
@@ -83,6 +85,7 @@ export const local = cli()
       opts.outputDir,
       [babel, localRename(prompt, contextWindowSize, opts.renameAll ?? false), prettier],
       sanitizer,
-      parseNumber(opts.fileConcurrency)
+      parseNumber(opts.fileConcurrency),
+      llmClient
     );
   });

@@ -11,6 +11,8 @@ import { WakaruSanitizer } from "../services/sanitizer/index.js";
 import { DEFAULT_FILE_CONCURRENCY } from "../unminify.js";
 import { DiscoveryService } from "../services/discovery/index.js";
 import { stat } from "node:fs/promises";
+import { KeyManager } from "../services/key-manager/index.js";
+import { createOpenAIClient } from "../services/api-analyzer/llm-client-factory.js";
 
 export const openai = cli()
   .name("openai")
@@ -72,6 +74,7 @@ export const openai = cli()
     const apiKey = opts.apiKey ?? env("OPENAI_API_KEY");
     const baseURL = opts.baseURL;
     const contextWindowSize = parseNumber(opts.contextSize);
+    const llmClient = createOpenAIClient(apiKeys[0], opts.model, baseURL);
     const sanitizer = new WakaruSanitizer({
       enabled: opts.sanitizer !== false,
       useHeuristicNaming: opts.heuristicNaming !== false
@@ -91,6 +94,7 @@ export const openai = cli()
         prettier
       ],
       sanitizer,
-      parseNumber(opts.fileConcurrency)
+      parseNumber(opts.fileConcurrency),
+      llmClient
     );
   });

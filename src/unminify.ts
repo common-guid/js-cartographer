@@ -11,6 +11,7 @@ import { pLimit } from "./concurrency.js";
 import { SourcemapService } from "./services/sourcemap/index.js";
 import { InputTask } from "./services/discovery/index.js";
 import { StateCache } from "./services/cache/index.js";
+import { LlmClient } from "./services/api-analyzer/llm-sanitization-service.js";
 
 export const DEFAULT_FILE_CONCURRENCY = 3;
 
@@ -19,7 +20,8 @@ export async function unminify(
   outputDir: string,
   plugins: ((code: string, sourcemapService?: SourcemapService) => Promise<string>)[] = [],
   sanitizer?: WakaruSanitizer,
-  fileConcurrency: number = DEFAULT_FILE_CONCURRENCY
+  fileConcurrency: number = DEFAULT_FILE_CONCURRENCY,
+  llmClient?: LlmClient
 ) {
   const allExtractedFiles: { path: string; sourcemapService?: SourcemapService }[] = [];
   const stateCache = new StateCache(outputDir);
@@ -129,7 +131,7 @@ export async function unminify(
   // Build API Surface & Security Findings
   console.log("[Phase 6] Reconstructing API Surface & Security Findings...");
   const apiAnalyzer = new ApiAnalyzer();
-  const { apiSurface, securityFindings, taintFlows } = await apiAnalyzer.build(outputDir, callGraph);
+  const { apiSurface, securityFindings, taintFlows } = await apiAnalyzer.build(outputDir, callGraph, llmClient);
   
   const apiSurfacePath = path.join(outputDir, "api-surface.json");
   await fs.writeFile(apiSurfacePath, JSON.stringify(apiSurface, null, 2));

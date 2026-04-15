@@ -21,6 +21,7 @@ To provide a powerful, AI-driven tool for transforming minified, obfuscated, or 
 - **Visualizations:** Generates ASCII trees and Mermaid flowcharts for call graph visualization.
 - **DOM Source/Sink Discovery:** Automatically identifies security-sensitive browser-specific sources (e.g., `location.hash`, `localStorage`, `cookies`) and sinks (e.g., `eval`, `document.write`, `innerHTML`) in JavaScript code, outputting a structured `security-findings.json` report.
 - **Inter-procedural & Cross-Module Taint Tracking:** Automatically maps the flow of data from sources to sinks across function calls and module boundaries, including **Full Path Reconstruction** to trace the complete sequence of execution steps in `taint-flows.json`.
+- **LLM-Augmented Sanitization & Flow Analysis:** Leverages LLMs to identify custom sanitization functions and provide natural language explanations, risk scores, and potential bypass vectors for discovered taint flows.
 - **Framework Awareness:** Detects frameworks (e.g., React, Express) to inject context-specific naming conventions into LLM prompts, speeding up structural comprehension.
 
 ## Architectural & Design Principles
