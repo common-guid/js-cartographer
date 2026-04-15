@@ -1,0 +1,11 @@
+{
+  "id": "qwen3-coder-advanced-path",
+  "name": "Advanced Path - High-Performance Local Inference via AWQ/vLLM",
+  "status": "pending",
+  "owner": "guid",
+  "description": "Establish a high-performance local unminification pipeline using AWQ models and external inference servers like vLLM.",
+  "links": {
+    "spec": "spec.md",
+    "plan": "plan.md"
+  }
+}
