@@ -28,6 +28,7 @@ export interface SecurityFinding {
   url?: string;
   method?: string;
   body?: Record<string, string>;
+  file?: string;
 }
 
 export async function findSecurityFindings(code: string): Promise<SecurityFinding[]> {
