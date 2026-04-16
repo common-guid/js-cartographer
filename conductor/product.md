@@ -16,8 +16,9 @@ To provide a powerful, AI-driven tool for transforming minified, obfuscated, or 
 - **LLM Semantic Renaming:** Leverages large language models (Local, OpenAI, Gemini, OpenRouter) to assign meaningful names to variables and functions.
 - **Local LLM Performance:** Supports high-tier coding models like Qwen3-Coder-30B-A3B for superior local deobfuscation without API costs.
 - **Codebase Mapping:** Generates navigable dependency graphs (`module-graph.json`) and semantic call graphs (`call-graph.json`) to trace data flow and execution paths.
-- **Interactive Web Explorer:** Provides a UI for exploring the deobfuscated codebase and its associated graphs, designed for rapid security analysis.
+- **Interactive Web Explorer:** Provides a UI for exploring the deobfuscated codebase and its associated graphs, designed for rapid security analysis. Includes a dedicated **Security Analysis View** for interactive exploration of taint flows.
 - **Black-Box API Reconstruction:** Automatically identifies backend API routes, methods, and parameters from client-side JS bundles. Generates a structured 'Virtual OpenAPI Spec' and provides integrated exploration within the Web UI.
+- **Structured Security Reporting:** Automatically generates comprehensive security reports in JSON format (via CLI `--security-report` or Web UI export), including API surfaces, DOM findings, and analyzed taint paths.
 - **Visualizations:** Generates ASCII trees and Mermaid flowcharts for call graph visualization.
 - **DOM Source/Sink Discovery:** Automatically identifies security-sensitive browser-specific sources (e.g., `location.hash`, `localStorage`, `cookies`) and sinks (e.g., `eval`, `document.write`, `innerHTML`) in JavaScript code, outputting a structured `security-findings.json` report.
 - **Inter-procedural & Cross-Module Taint Tracking:** Automatically maps the flow of data from sources to sinks across function calls and module boundaries, including **Full Path Reconstruction** to trace the complete sequence of execution steps in `taint-flows.json`.
