@@ -44,6 +44,7 @@ export const local = cli()
   )
   .option("--sourcemap <path>", "The sourcemap file to use for truth injection")
   .option("--maps <dir>", "Directory containing sourcemap files for automated matching")
+  .option("--security-report <path>", "Save a unified security report to this path")
   .argument("input", "The input minified Javascript file or directory")
   .action(async (input, opts) => {
     if (opts.verbose) {
@@ -86,6 +87,7 @@ export const local = cli()
       [babel, localRename(prompt, contextWindowSize, opts.renameAll ?? false), prettier],
       sanitizer,
       parseNumber(opts.fileConcurrency),
-      llmClient
+      llmClient,
+      opts.securityReport
     );
   });

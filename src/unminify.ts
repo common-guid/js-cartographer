@@ -21,7 +21,8 @@ export async function unminify(
   plugins: ((code: string, sourcemapService?: SourcemapService) => Promise<string>)[] = [],
   sanitizer?: WakaruSanitizer,
   fileConcurrency: number = DEFAULT_FILE_CONCURRENCY,
-  llmClient?: LlmClient
+  llmClient?: LlmClient,
+  securityReportPath?: string
 ) {
   const allExtractedFiles: { path: string; sourcemapService?: SourcemapService }[] = [];
   const stateCache = new StateCache(outputDir);
@@ -144,6 +145,16 @@ export async function unminify(
   const taintFlowsPath = path.join(outputDir, "taint-flows.json");
   await fs.writeFile(taintFlowsPath, JSON.stringify(taintFlows, null, 2));
   console.log(`[Security] ${taintFlows.length} taint flows discovered and saved to ${taintFlowsPath}`);
+
+  if (securityReportPath) {
+    const report = {
+      apiSurface,
+      securityFindings,
+      taintFlows
+    };
+    await fs.writeFile(securityReportPath, JSON.stringify(report, null, 2));
+    console.log(`[Security] Unified security report saved to ${securityReportPath}`);
+  }
 
   if (process.env.VERBOSE) {
     if (securityFindings.length > 0) {

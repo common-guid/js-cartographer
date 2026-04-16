@@ -41,11 +41,13 @@ describe('Explorer Server', () => {
   });
 
   describe('GET /api/graphs', () => {
-    it('should return call graph and module graph data', async () => {
+    it('should return call graph, module graph, and security data', async () => {
       const { status, body } = await get('/api/graphs');
       assert.strictEqual(status, 200);
       assert.ok(body.callGraph, 'callGraph should be present');
       assert.ok(body.moduleGraph, 'moduleGraph should be present');
+      assert.ok(body.securityFindings, 'securityFindings should be present');
+      assert.ok(body.taintFlows, 'taintFlows should be present');
     });
 
     it('should contain the expected number of call graph nodes', async () => {

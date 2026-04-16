@@ -35,10 +35,14 @@ export function createExplorerServer(options: ExplorerServerOptions): Promise<ht
       const callGraphPath = path.join(projectDir, 'call-graph.json');
       const moduleGraphPath = path.join(projectDir, 'module-graph.json');
       const apiSurfacePath = path.join(projectDir, 'api-surface.json');
+      const securityFindingsPath = path.join(projectDir, 'security-findings.json');
+      const taintFlowsPath = path.join(projectDir, 'taint-flows.json');
 
       let callGraph = null;
       let moduleGraph = null;
       let apiSurface = null;
+      let securityFindings = null;
+      let taintFlows = null;
 
       try {
         const raw = await fs.readFile(callGraphPath, 'utf-8');
@@ -61,14 +65,28 @@ export function createExplorerServer(options: ExplorerServerOptions): Promise<ht
         // api-surface.json may not exist
       }
 
-      if (!callGraph && !moduleGraph && !apiSurface) {
+      try {
+        const raw = await fs.readFile(securityFindingsPath, 'utf-8');
+        securityFindings = JSON.parse(raw);
+      } catch {
+        // security-findings.json may not exist
+      }
+
+      try {
+        const raw = await fs.readFile(taintFlowsPath, 'utf-8');
+        taintFlows = JSON.parse(raw);
+      } catch {
+        // taint-flows.json may not exist
+      }
+
+      if (!callGraph && !moduleGraph && !apiSurface && !securityFindings && !taintFlows) {
         res.status(404).json({
-          error: 'No graph data found. Expected call-graph.json, module-graph.json, or api-surface.json in the project directory.',
+          error: 'No graph data found. Expected call-graph.json, module-graph.json, api-surface.json, security-findings.json, or taint-flows.json in the project directory.',
         });
         return;
       }
 
-      res.json({ callGraph, moduleGraph, apiSurface });
+      res.json({ callGraph, moduleGraph, apiSurface, securityFindings, taintFlows });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
-import type { CallGraphData, ModuleGraph, FunctionNode, ApiSurface } from '../lib/types';
+import type { CallGraphData, ModuleGraph, FunctionNode, ApiSurface, SecurityFinding, TaintFlow } from '../lib/types';
 
-export type GraphView = 'call-graph' | 'module-graph' | 'api-surface';
+export type GraphView = 'call-graph' | 'module-graph' | 'api-surface' | 'security';
 
 interface NavigationEntry {
   file: string;
@@ -14,6 +14,8 @@ interface ExplorerState {
   callGraph: CallGraphData | null;
   moduleGraph: ModuleGraph | null;
   apiSurface: ApiSurface | null;
+  securityFindings: (SecurityFinding & { file: string })[] | null;
+  taintFlows: TaintFlow[] | null;
   loading: boolean;
   error: string | null;
 
@@ -25,6 +27,7 @@ interface ExplorerState {
   selectedNodeId: string | null;
   selectedFile: string | null;
   selectedLine: number | null;
+  selectedFlowIndex: number | null;
   fileContent: string | null;
   fileLoading: boolean;
 
@@ -40,6 +43,7 @@ interface ExplorerState {
   fetchGraphs: () => Promise<void>;
   selectNode: (nodeId: string) => void;
   selectFile: (file: string, line?: number) => void;
+  selectFlow: (index: number) => void;
   fetchFile: (filePath: string) => Promise<void>;
   navigateBack: () => void;
   navigateForward: () => void;
@@ -51,6 +55,8 @@ export const useExplorerStore = create<ExplorerState>((set, get) => ({
   callGraph: null,
   moduleGraph: null,
   apiSurface: null,
+  securityFindings: null,
+  taintFlows: null,
   loading: true,
   error: null,
 
@@ -62,6 +68,7 @@ export const useExplorerStore = create<ExplorerState>((set, get) => ({
   selectedNodeId: null,
   selectedFile: null,
   selectedLine: null,
+  selectedFlowIndex: null,
   fileContent: null,
   fileLoading: false,
 
@@ -87,6 +94,8 @@ export const useExplorerStore = create<ExplorerState>((set, get) => ({
         callGraph: data.callGraph, 
         moduleGraph: data.moduleGraph, 
         apiSurface: data.apiSurface,
+        securityFindings: data.securityFindings,
+        taintFlows: data.taintFlows,
         loading: false 
       });
     } catch (error: any) {
@@ -108,6 +117,7 @@ export const useExplorerStore = create<ExplorerState>((set, get) => ({
         selectedNodeId: nodeId,
         selectedFile: node.file,
         selectedLine: node.line,
+        selectedFlowIndex: null,
         history: newHistory,
         historyIndex: newHistory.length - 1,
       });
@@ -124,11 +134,34 @@ export const useExplorerStore = create<ExplorerState>((set, get) => ({
     set({
       selectedFile: file,
       selectedLine: line ?? null,
+      selectedNodeId: null,
+      selectedFlowIndex: null,
       history: newHistory,
       historyIndex: newHistory.length - 1,
     });
 
     get().fetchFile(file);
+  },
+
+  selectFlow: (index: number) => {
+    const { taintFlows } = get();
+    if (!taintFlows || !taintFlows[index]) return;
+
+    const flow = taintFlows[index];
+    const entry: NavigationEntry = { file: flow.sink.file || flow.file, line: flow.sink.loc?.line };
+    const { history, historyIndex } = get();
+    const newHistory = [...history.slice(0, historyIndex + 1), entry];
+
+    set({
+      selectedFlowIndex: index,
+      selectedFile: flow.sink.file || flow.file,
+      selectedLine: flow.sink.loc?.line ?? null,
+      selectedNodeId: null,
+      history: newHistory,
+      historyIndex: newHistory.length - 1,
+    });
+
+    get().fetchFile(flow.sink.file || flow.file);
   },
 
   fetchFile: async (filePath: string) => {

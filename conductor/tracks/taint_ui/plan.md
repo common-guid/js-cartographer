@@ -1,6 +1,6 @@
 # Implementation Plan: Security Explorer UI & Reporting
 
-- [ ] Task: Web Explorer Security View
+- [~] Task: Web Explorer Security View
     - [ ] Implement the "Security Analysis" tab using React Flow to visualize taint paths.
 - [ ] Task: Flow Detail Panel
     - [ ] Add a side panel to display LLM-generated explanations and code snippets.

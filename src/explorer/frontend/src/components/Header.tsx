@@ -12,6 +12,7 @@ export default function Header() {
   const apiSurface = useExplorerStore((s) => s.apiSurface);
   const callGraph = useExplorerStore((s) => s.callGraph);
   const moduleGraph = useExplorerStore((s) => s.moduleGraph);
+  const securityFindings = useExplorerStore((s) => s.securityFindings);
 
   const nodeCount = callGraph ? Object.keys(callGraph.nodes).length : 0;
   const edgeCount = callGraph ? callGraph.edges.length : 0;
@@ -20,6 +21,7 @@ export default function Header() {
     { key: 'call-graph', label: 'Call Graph', available: !!callGraph },
     { key: 'module-graph', label: 'Modules', available: !!moduleGraph },
     { key: 'api-surface', label: 'API Surface', available: !!apiSurface },
+    { key: 'security', label: 'Security Analysis', available: !!securityFindings },
   ];
 
   return (

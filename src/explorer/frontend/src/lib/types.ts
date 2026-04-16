@@ -50,11 +50,49 @@ export interface ApiSurface {
   endpoints: ApiEndpoint[];
 }
 
+export type SecurityFindingType = 'source' | 'sink';
+
+export interface SecurityFinding {
+  type: SecurityFindingType;
+  category: 'DOM' | 'API';
+  name: string;
+  loc?: { line: number; column: number };
+  snippet?: string;
+  url?: string;
+  method?: string;
+  body?: Record<string, string>;
+  file?: string;
+}
+
+export interface TaintPathElement {
+  file: string;
+  line: number;
+  column: number;
+  name: string;
+}
+
+export interface FlowAnalysis {
+  explanation: string;
+  riskScore: number;
+  implications: string;
+  bypassSuggestions: string[];
+}
+
+export interface TaintFlow {
+  source: SecurityFinding;
+  sink: SecurityFinding;
+  path: TaintPathElement[];
+  file: string;
+  analysis?: FlowAnalysis | null;
+}
+
 /** API response from /api/graphs */
 export interface GraphsResponse {
   callGraph: CallGraphData | null;
   moduleGraph: ModuleGraph | null;
   apiSurface: ApiSurface | null;
+  securityFindings: (SecurityFinding & { file: string })[] | null;
+  taintFlows: TaintFlow[] | null;
 }
 
 /** API response from /api/file */
