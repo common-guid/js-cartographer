@@ -1,0 +1,8 @@
+{
+  "track_id": "llm_sanitization",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-04-14T19:29:30Z",
+  "updated_at": "2026-04-14T19:29:30Z",
+  "description": "LLM-based sanitization analysis and natural language flow explanation."
+}
