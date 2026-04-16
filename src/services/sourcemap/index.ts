@@ -21,7 +21,9 @@ export class SourcemapService {
    */
   destroy() {
     if (this.consumer) {
-      this.consumer.destroy();
+      if (typeof (this.consumer as any).destroy === "function") {
+        (this.consumer as any).destroy();
+      }
       this.consumer = null;
     }
   }
