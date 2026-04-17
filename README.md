@@ -66,7 +66,11 @@ Input bundle
  9. CallGraphBuilder      ─── Writes call-graph.json (function nodes + call edges)
      │
      ▼
-Output directory: recovered source files + graph artifacts
+ 10. SecurityAnalyzer     ─── Maps taint flows (source → sink), identifies DOM
+                              vulnerabilities, and generates LLM explanations
+     │
+     ▼
+Output directory: recovered source files + graph and security artifacts
 ```
 
 ### Why Humanify + Wakaru together?
@@ -126,7 +130,10 @@ This approach makes the LLM's job easier (smaller decision space, clearer conven
 - **Framework-aware context**: Automatically detects framework fingerprints (React hooks, JSX, Express middleware patterns) and injects framework-specific naming conventions into the LLM prompt. This dramatically improves identifier quality by teaching the LLM idiomatic patterns (e.g., `useState` hook destructuring as `[state, setState]`, React component names capitalized, Express routes as `(req, res, next) => {}`) without polluting the generic prompt for non-framework code. Detection is deterministic and cost-free.
 - **Module dependency graph**: Writes `module-graph.json` mapping all `import`/`require` relationships across the unbundled project
 - **Semantic call graph**: Writes `call-graph.json` indexing every function definition and call edge (internal and cross-file)
-- **Interactive Web Explorer**: A browser-based UI for exploring the deobfuscated codebase, dependency graph, and call graph in an integrated "Map and Territory" view.
+- **Interactive Web Explorer**: A browser-based UI for exploring the deobfuscated codebase, dependency graph, and call graph in an integrated "Map and Territory" view. Includes a dedicated **Security Analysis** tab for interactive taint flow exploration.
+- **Inter-procedural taint tracking**: Automatically maps the flow of data from sources (e.g., `location.hash`) to sinks (e.g., `eval`) across function calls and module boundaries, providing **Full Path Reconstruction** for security researchers.
+- **LLM-augmented security analysis**: Leverages LLMs to identify custom sanitizers, generate natural language explanations of data flows, and provide risk/exploitability scores.
+- **Structured security reporting**: Generates `security-findings.json` and `taint-flows.json` reports. Use the `--security-report` CLI flag to output a unified audit file.
 - **Graph visualization**: `cartographer graph` sub-command renders the call graph as a depth-limited ASCII tree or Mermaid flowchart
 - **Webpack bundle support**: Powered by `webcrack` for automatic bundle extraction
 - **Safety-first pipeline**: Each transformation stage wraps errors independently — a failing Wakaru rule or Prettier pass never aborts the entire run
@@ -389,6 +396,7 @@ Shared deobfuscation options (local | openai | gemini | openrouter):
   --verbose                     Verbose output
   --no-sanitizer                Disable Wakaru syntax restoration
   --no-heuristic-naming         Disable static heuristic naming
+  --security-report <path>      Save a unified security report to this path
 
 local-specific options:
   -s, --seed <seed>             Seed for reproducible results
@@ -425,6 +433,8 @@ Every deobfuscation run produces the following in the output directory:
 | `src/**/*.js` | Recovered and renamed source files (mirroring the original module structure) |
 | `module-graph.json` | Project-wide import/require dependency map. Each entry lists the `imports` and `exports` for every file. |
 | `call-graph.json` | Semantic function call graph. Contains a `nodes` registry (one entry per named function: file, name, line) and an `edges` array recording every call site with `type: "internal"` or `"external"`. |
+| `security-findings.json` | Catalog of DOM-based sources and sinks found in the codebase. |
+| `taint-flows.json` | Map of execution paths from untrusted sources to sensitive sinks, including full path steps and LLM-generated risk analysis. |
 | `call-graph.mermaid` | Mermaid flowchart export (only when `--format mermaid` is used) |
 
 ### module-graph.json schema

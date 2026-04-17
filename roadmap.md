@@ -10,28 +10,15 @@ These features have been successfully implemented and verified through Conductor
 - [x] **Framework-Aware Context & Heuristics**: Detect React, Express, etc., to inject idiomatic naming conventions into LLM prompts.
 - [x] **Interactive Web-based "Cartography" Explorer**: Dual-pane GUI for navigating recovered source code alongside module and call graphs.
 - [x] **Black-Box API Surface Reconstruction**: Automatically build Virtual OpenAPI specs from client-side code analysis.
+- [x] **Rate-Limit Resilience**: Handle large-scale deobfuscation with state-file tracking (resume) and multi-key rotation with automatic failover.
+- [x] **Automated Taint Analysis**: End-to-end "Taint-to-Sink" mapping with full path reconstruction, LLM-augmented risk scoring, and interactive security visualization.
 
 ---
 
 ## 🚀 Active Conductor Tracks
 These features are currently under active development.
 
-### 1. Rate-Limit Resilience (Resume + Key Rotation)
-**Effort:** Medium
-**Objective:** Handle large-scale deobfuscation without crashing on API limits.
-- **[ACTIVE] State File Tracking:** Maintain a cache to resume interrupted runs without re-processing completed chunks.
-- **[ACTIVE] API Key Rotation:** Support multiple API keys with round-robin rotation and automatic failover on 429 errors.
-
-### 2. Taint Analysis (Milestone)
-**Effort:** Extreme
-**Objective:** Automated "Taint-to-Sink" mapping to identify DOM-based vulnerabilities and data leaks in deobfuscated code.
-- **[TRACK] 1. DOM Source/Sink Discovery:** Expand `api-analyzer` to identify DOM sources (`location.hash`, etc.) and execution sinks (`eval`, `innerHTML`).
-- **[TRACK] 2. Intra-procedural Taint Tracking:** Build a data-flow engine for tracking variables from source to sink within a single function.
-- **[TRACK] 3. Inter-procedural & Cross-Module Taint Tracking:** Connect local data flows across function boundaries and module imports/exports.
-- **[TRACK] 4. LLM-Augmented Sanitization Check:** Use LLM to analyze intermediate functions and identify sanitizers (e.g., `DOMPurify`).
-- **[TRACK] 5. Security Explorer UI & Reporting:** Add a "Security" tab to the Web Explorer for interactive flow visualization and structured reporting.
-
-### 3. Qwen3-Coder Local Model Integration
+### 1. Qwen3-Coder Local Model Integration
 **Effort:** Medium
 **Objective:** Integrate the latest Qwen3-Coder models (30B-A3B) for high-performance local deobfuscation.
 - **[PLANNED] GGUF Integration:** native support for Qwen3-Coder weights.
@@ -60,8 +47,6 @@ Potential directions for future research.
 ## Effort Ranking (Highest to Lowest)
 
 1. **Dynamic Analysis & Runtime-Assisted Naming**
-2. **Automated "Taint-to-Sink" Mapping**
-3. **Semantic "Security Logic" Tagging**
-4. **Rate-Limit Resilience (Resume + Key Rotation)**
-5. **Qwen3-Coder Local Model Integration**
-6. **Continuous Quality & Testing Suite**
+2. **Semantic "Security Logic" Tagging**
+3. **Qwen3-Coder Local Model Integration**
+4. **Continuous Quality & Testing Suite**
