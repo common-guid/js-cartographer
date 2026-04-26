@@ -19,5 +19,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [ ] **Track: Advanced Path - High-Performance Local Inference via AWQ/vLLM**
   *Link: [./tracks/qwen3-coder-advanced-path/](./tracks/qwen3-coder-advanced-path/)*
 
-- [~] **Track: Resume Feature**
+- [x] **Track: Resume Feature**
   *Link: [./tracks/resume-feature/](./tracks/resume-feature/)*
