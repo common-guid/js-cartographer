@@ -1,4 +1,5 @@
 import fs from "fs/promises";
+import { existsSync } from "node:fs";
 import path from "node:path";
 import { ensureFileExists } from "./file-utils.js";
 import { webcrack } from "./plugins/webcrack.js";
@@ -27,10 +28,14 @@ export async function unminify(
 
   console.log(`[Batch] Processing ${tasks.length} input chunks...`);
 
+  const stagingDir = path.join(outputDir, ".cartographer-tmp");
+  await fs.rm(stagingDir, { recursive: true, force: true });
+  await fs.mkdir(stagingDir, { recursive: true });
+
   for (const task of tasks) {
     ensureFileExists(task.jsPath);
     const bundledCode = await fs.readFile(task.jsPath, "utf-8");
-    const extractedFiles = await webcrack(bundledCode, outputDir);
+    const extractedFiles = await webcrack(bundledCode, stagingDir);
 
     let sourcemapService: SourcemapService | undefined;
     if (task.mapPath) {
@@ -48,7 +53,7 @@ export async function unminify(
     // Build Module Graph (Phase 4)
     // We build the graph after unbundling all chunks to ensure cross-chunk references are captured if possible
     const graphBuilder = new GraphBuilder();
-    const graph = await graphBuilder.build(outputDir);
+    const graph = await graphBuilder.build(stagingDir);
     const graphPath = path.join(outputDir, "module-graph.json");
     await fs.writeFile(graphPath, JSON.stringify(graph, null, 2));
     console.log(`[Graph] Dependency map saved to ${graphPath}`);
@@ -69,6 +74,9 @@ export async function unminify(
 
     async function processFile(file: { path: string; sourcemapService?: SourcemapService }, index: number) {
       try {
+        const relativePath = path.relative(stagingDir, file.path);
+        const destPath = path.join(outputDir, relativePath);
+
         console.log(`Processing file ${index + 1}/${totalFiles}`);
 
         let code = await fs.readFile(file.path, "utf-8");
@@ -78,9 +86,9 @@ export async function unminify(
           return;
         }
 
-        // Check cache
-        if (await stateCache.isCompleted(file.path, code)) {
-          console.log(`[Cache] Skipping already processed file ${file.path}`);
+        // Check cache using destination path
+        if ((await stateCache.isCompleted(destPath, code)) && existsSync(destPath)) {
+          console.log(`[Cache] Skipping already processed file ${destPath}`);
           return;
         }
 
@@ -98,8 +106,9 @@ export async function unminify(
         verbose.log("Input: ", code);
         verbose.log("Output: ", formattedCode);
 
-        await fs.writeFile(file.path, formattedCode);
-        await stateCache.markAsCompleted(file.path, code);
+        await fs.mkdir(path.dirname(destPath), { recursive: true });
+        await fs.writeFile(destPath, formattedCode);
+        await stateCache.markAsCompleted(destPath, code);
       } catch (error) {
         console.error(`[Error] Failed to process ${file.path}:`, error);
         // We don't rethrow here because we want Promise.all to continue with other files
@@ -110,6 +119,9 @@ export async function unminify(
       allExtractedFiles.map((file, i) => limit(() => processFile(file, i)))
     );
   } finally {
+    // Cleanup staging directory
+    await fs.rm(stagingDir, { recursive: true, force: true });
+
     // Clean up all sourcemap services
     const services = new Set(allExtractedFiles.map(f => f.sourcemapService).filter(Boolean));
     for (const service of services) {
