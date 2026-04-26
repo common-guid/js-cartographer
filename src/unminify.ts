@@ -32,24 +32,24 @@ export async function unminify(
   await fs.rm(stagingDir, { recursive: true, force: true });
   await fs.mkdir(stagingDir, { recursive: true });
 
-  for (const task of tasks) {
-    ensureFileExists(task.jsPath);
-    const bundledCode = await fs.readFile(task.jsPath, "utf-8");
-    const extractedFiles = await webcrack(bundledCode, stagingDir);
+  try {
+    for (const task of tasks) {
+      ensureFileExists(task.jsPath);
+      const bundledCode = await fs.readFile(task.jsPath, "utf-8");
+      const extractedFiles = await webcrack(bundledCode, stagingDir);
 
-    let sourcemapService: SourcemapService | undefined;
-    if (task.mapPath) {
-      ensureFileExists(task.mapPath);
-      const rawSourcemap = JSON.parse(await fs.readFile(task.mapPath, "utf-8"));
-      sourcemapService = new SourcemapService(rawSourcemap);
-      await sourcemapService.init();
-      console.log(`[Sourcemap] Truth Injection enabled for ${path.basename(task.jsPath)} using ${path.basename(task.mapPath)}`);
+      let sourcemapService: SourcemapService | undefined;
+      if (task.mapPath) {
+        ensureFileExists(task.mapPath);
+        const rawSourcemap = JSON.parse(await fs.readFile(task.mapPath, "utf-8"));
+        sourcemapService = new SourcemapService(rawSourcemap);
+        await sourcemapService.init();
+        console.log(`[Sourcemap] Truth Injection enabled for ${path.basename(task.jsPath)} using ${path.basename(task.mapPath)}`);
+      }
+
+      allExtractedFiles.push(...extractedFiles.map(f => ({ ...f, sourcemapService })));
     }
 
-    allExtractedFiles.push(...extractedFiles.map(f => ({ ...f, sourcemapService })));
-  }
-
-  try {
     // Build Module Graph (Phase 4)
     // We build the graph after unbundling all chunks to ensure cross-chunk references are captured if possible
     const graphBuilder = new GraphBuilder();

@@ -6,6 +6,7 @@ import { openaiRename } from "../plugins/openai/openai-rename.js";
 import { verbose } from "../verbose.js";
 import { env } from "../env.js";
 import { parseNumber } from "../number-utils.js";
+import { KeyManager } from "../services/key-manager/index.js";
 import { DEFAULT_CONTEXT_WINDOW_SIZE } from "./default-args.js";
 import { WakaruSanitizer } from "../services/sanitizer/index.js";
 import { DEFAULT_FILE_CONCURRENCY } from "../unminify.js";

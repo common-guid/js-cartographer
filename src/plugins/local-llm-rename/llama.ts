@@ -22,6 +22,7 @@ export async function llama(opts: {
   model: string;
   disableGpu?: boolean;
   sequences?: number;
+  contextSize?: number;
 }): Promise<Prompt> {
   const disableGpu = opts.disableGpu ?? IS_CI;
   const llama = await getLlama({ gpu: disableGpu ? false : "auto" });
@@ -32,9 +33,31 @@ export async function llama(opts: {
   verbose.log("Loading model with options", modelOpts);
   const model = await llama.loadModel(modelOpts);
 
-  const context = await model.createContext({ 
+  let sequences = Math.max(1, (opts.sequences ?? 1) * 2 + 2);
+  const requiredPerSequenceTokens = opts.contextSize
+    ? (opts.contextSize / 2 + 1000)
+    : 1000;
+  let contextSize = opts.contextSize
+    ? Math.max(2048, requiredPerSequenceTokens * sequences)
+    : undefined;
+
+  if (contextSize !== undefined && model.maxContextLength > 0 && contextSize > model.maxContextLength) {
+    verbose.log(`Requested context size ${contextSize} exceeds model max ${model.maxContextLength}, capping to model max`);
+    contextSize = model.maxContextLength;
+
+    const maxPossibleSequences = Math.floor(contextSize / requiredPerSequenceTokens);
+    if (maxPossibleSequences < sequences) {
+      verbose.log(`Reducing sequences from ${sequences} to ${Math.max(1, maxPossibleSequences)} due to context size limits`);
+      sequences = Math.max(1, maxPossibleSequences);
+    }
+  }
+
+  verbose.log(`Creating context with ${sequences} sequences and ${contextSize} context size`);
+
+  const context = await model.createContext({
     seed: opts?.seed,
-    sequences: Math.max(1, (opts.sequences ?? 1) * 2 + 2)
+    sequences,
+    contextSize
   });
 
   return async (systemPrompt, userPrompt, responseGrammar) => {

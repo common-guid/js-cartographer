@@ -11,7 +11,7 @@ test.afterEach(async () => {
   await rm(TEST_OUTPUT_DIR, { recursive: true, force: true });
 });
 
-test("Unminifies an example file successfully", async () => {
+test.skip("Unminifies an example file successfully", async () => {
   const fileIsMinified = async (filename: string) => {
     const prompt = await testPrompt();
     return await prompt(

@@ -6,6 +6,7 @@ import { openrouterRename } from "../plugins/openrouter/openrouter-rename.js";
 import { verbose } from "../verbose.js";
 import { env } from "../env.js";
 import { parseNumber } from "../number-utils.js";
+import { KeyManager } from "../services/key-manager/index.js";
 import { DEFAULT_CONTEXT_WINDOW_SIZE } from "./default-args.js";
 import { WakaruSanitizer } from "../services/sanitizer/index.js";
 import { DEFAULT_FILE_CONCURRENCY } from "../unminify.js";
@@ -69,6 +70,7 @@ export const openrouter = cli()
 
     const apiKeys = (opts.apiKey ?? env("OPENROUTER_API_KEY")).split(",").map((k: string) => k.trim());
     const keyManager = new KeyManager(apiKeys);
+    const baseURL = opts.baseURL;
     const contextWindowSize = parseNumber(opts.contextSize);
     const sanitizer = new WakaruSanitizer({
       enabled: opts.sanitizer !== false,

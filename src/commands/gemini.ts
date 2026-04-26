@@ -7,6 +7,7 @@ import { geminiRename } from "../plugins/gemini-rename.js";
 import { env } from "../env.js";
 import { DEFAULT_CONTEXT_WINDOW_SIZE } from "./default-args.js";
 import { parseNumber } from "../number-utils.js";
+import { KeyManager } from "../services/key-manager/index.js";
 import { WakaruSanitizer } from "../services/sanitizer/index.js";
 import { DEFAULT_FILE_CONCURRENCY } from "../unminify.js";
 import { DiscoveryService } from "../services/discovery/index.js";

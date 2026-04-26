@@ -72,7 +72,8 @@ export const local = cli()
       model: opts.model,
       disableGpu: opts.disableGpu,
       seed: opts.seed ? parseInt(opts.seed) : undefined,
-      sequences: parseNumber(opts.fileConcurrency)
+      sequences: parseNumber(opts.fileConcurrency),
+      contextSize: contextWindowSize
     });
     const sanitizer = new WakaruSanitizer({
       enabled: opts.sanitizer !== false,
