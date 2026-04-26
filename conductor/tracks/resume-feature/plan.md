@@ -50,3 +50,6 @@ We will introduce a "Staging Directory" pattern to separate the extraction of mi
 
 ## Migration & Rollback
 No migration is required since the cache structure and final output structure remain exactly the same. The change only affects the intermediate steps during execution. If issues arise, the code can be trivially reverted by changing `stagingDir` back to `outputDir`.
+
+## Phase: Review Fixes
+- [x] Task: Apply review suggestions 4d8a8d9
