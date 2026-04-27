@@ -36,7 +36,9 @@ export async function unminify(
     for (const task of tasks) {
       ensureFileExists(task.jsPath);
       const bundledCode = await fs.readFile(task.jsPath, "utf-8");
-      const extractedFiles = await webcrack(bundledCode, stagingDir);
+      const taskStagingDir = path.join(stagingDir, path.basename(task.jsPath));
+      await fs.mkdir(taskStagingDir, { recursive: true });
+      const extractedFiles = await webcrack(bundledCode, taskStagingDir);
 
       let sourcemapService: SourcemapService | undefined;
       if (task.mapPath) {

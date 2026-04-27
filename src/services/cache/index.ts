@@ -34,13 +34,33 @@ export class StateCache {
     return this.state[filePath] === hash;
   }
 
+  private savePromise: Promise<void> | null = null;
+  private needsSave = false;
+
   /**
    * Marks a file as successfully completed.
    */
   async markAsCompleted(filePath: string, content: string): Promise<void> {
     const hash = this.hashContent(content);
     this.state[filePath] = hash;
-    await this.save();
+    await this.queueSave();
+  }
+
+  private async queueSave(): Promise<void> {
+    if (this.savePromise) {
+      this.needsSave = true;
+      return this.savePromise;
+    }
+
+    this.savePromise = this.save().finally(() => {
+      this.savePromise = null;
+      if (this.needsSave) {
+        this.needsSave = false;
+        this.queueSave();
+      }
+    });
+
+    return this.savePromise;
   }
 
   private hashContent(content: string): string {

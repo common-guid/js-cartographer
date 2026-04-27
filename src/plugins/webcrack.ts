@@ -13,8 +13,19 @@ export async function webcrack(
   const cracked = await wc(code);
   await cracked.save(outputDir);
 
-  const output = await fs.readdir(outputDir);
-  return output
+  const getFiles = async (dir: string): Promise<string[]> => {
+    const entries = await fs.readdir(dir, { withFileTypes: true });
+    const files = await Promise.all(
+      entries.map(async (entry) => {
+        const fullPath = path.join(dir, entry.name);
+        return entry.isDirectory() ? getFiles(fullPath) : fullPath;
+      })
+    );
+    return files.flat();
+  };
+
+  const allFiles = await getFiles(outputDir);
+  return allFiles
     .filter((file) => file.endsWith(".js"))
-    .map((file) => ({ path: path.join(outputDir, file) }));
+    .map((file) => ({ path: file }));
 }

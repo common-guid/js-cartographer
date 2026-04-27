@@ -33,21 +33,21 @@ export async function llama(opts: {
   verbose.log("Loading model with options", modelOpts);
   const model = await llama.loadModel(modelOpts);
 
-  let sequences = Math.max(1, (opts.sequences ?? 1) * 2 + 2);
+  let sequences = opts.sequences ?? 1;
   const requiredPerSequenceTokens = opts.contextSize
-    ? (opts.contextSize / 2 + 1000)
-    : 1000;
-  let contextSize = opts.contextSize
-    ? Math.max(2048, requiredPerSequenceTokens * sequences)
-    : undefined;
+    ? Math.floor(opts.contextSize / 2 + 1000)
+    : 2048;
+  
+  // Total context size requested
+  let contextSize = requiredPerSequenceTokens * (sequences + 2); // Buffer for system prompts/shared KV
 
-  if (contextSize !== undefined && model.maxContextLength > 0 && contextSize > model.maxContextLength) {
-    verbose.log(`Requested context size ${contextSize} exceeds model max ${model.maxContextLength}, capping to model max`);
+  if (model.maxContextLength > 0 && contextSize > model.maxContextLength) {
+    verbose.log(`Requested context size ${contextSize} exceeds model max ${model.maxContextLength}, capping.`);
     contextSize = model.maxContextLength;
 
     const maxPossibleSequences = Math.floor(contextSize / requiredPerSequenceTokens);
     if (maxPossibleSequences < sequences) {
-      verbose.log(`Reducing sequences from ${sequences} to ${Math.max(1, maxPossibleSequences)} due to context size limits`);
+      console.warn(`[LLM] Warning: Reducing active sequences from ${sequences} to ${Math.max(1, maxPossibleSequences)} due to context size limits. This may slow down processing.`);
       sequences = Math.max(1, maxPossibleSequences);
     }
   }
@@ -62,9 +62,9 @@ export async function llama(opts: {
 
   return async (systemPrompt, userPrompt, responseGrammar) => {
     const sequence = await withRetry(async () => context.getSequence(), {
-      maxAttempts: 50,
+      maxAttempts: 100, // Increase retries for high concurrency
       initialDelayMs: 200,
-      backoffFactor: 1.1,
+      backoffFactor: 1.05,
       onRetry: (err) => {
         if (err instanceof Error && err.message.includes("No sequences left")) {
           verbose.log("No sequences left, waiting for one to become available...");
@@ -83,6 +83,7 @@ export async function llama(opts: {
     try {
       const response = await session.promptWithMeta(userPrompt, {
         temperature: 0.8,
+        maxTokens: 100, // Safety limit for variable names
         grammar: new LlamaGrammar(llama, {
           grammar: `${responseGrammar}`
         }),

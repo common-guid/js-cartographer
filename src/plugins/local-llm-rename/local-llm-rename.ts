@@ -11,10 +11,12 @@ const PADDING_CHARS = 200;
 export const localRename = (
   prompt: Prompt,
   contextWindowSize: number,
-  renameAll: boolean = false,
-  sourcemapService?: SourcemapService
+  renameAll: boolean = false
 ) => {
-  return async (code: string): Promise<string> => {
+  return async (
+    code: string,
+    sourcemapService?: SourcemapService
+  ): Promise<string> => {
     const [filename, frameworks] = await Promise.all([
       defineFilename(prompt, code.slice(0, PADDING_CHARS * 2)),
       detectFrameworks(code)
