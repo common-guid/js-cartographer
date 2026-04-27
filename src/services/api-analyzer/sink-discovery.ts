@@ -21,7 +21,13 @@ export async function findApiSinks(code: string): Promise<ApiSink[]> {
   const sinks: ApiSink[] = [];
 
   try {
-    const ast = await parseAsync(code, { sourceType: "unambiguous" });
+    const ast = await parseAsync(code, { 
+      sourceType: "unambiguous",
+      parserOpts: {
+        errorRecovery: true,
+        plugins: ["jsx", "typescript"]
+      }
+    });
     if (!ast) return [];
 
     traverse(ast, {

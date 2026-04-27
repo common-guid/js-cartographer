@@ -36,6 +36,7 @@ export async function calculateRecoveryScore(outputDir: string, sourceMapPath: s
         const ast = parser.parse(code, {
           sourceType: 'module',
           plugins: ['jsx', 'typescript'],
+          errorRecovery: true,
         });
 
         traverse(ast, {

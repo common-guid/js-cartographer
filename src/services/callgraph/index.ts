@@ -43,10 +43,14 @@ export class CallGraphBuilder {
     try {
       ast = parse(code, {
         sourceType: "module",
-        plugins: ["jsx", "typescript"]
+        plugins: ["jsx", "typescript"],
+        errorRecovery: true
       });
+      if (ast.errors && ast.errors.length > 0) {
+        console.warn(`[CallGraph] Recovered from ${ast.errors.length} syntax errors in ${relativePath}. Data might be incomplete.`);
+      }
     } catch (e) {
-      console.warn(`[CallGraph] Failed to parse ${relativePath}. Skipping.`);
+      console.warn(`[CallGraph] Failed to parse ${relativePath}. Skipping. Error: ${e instanceof Error ? e.message : String(e)}`);
       return;
     }
 

@@ -30,7 +30,12 @@ export class GraphBuilder {
         const ast = parse(code, {
           sourceType: 'module',
           plugins: ['jsx', 'typescript'],
+          errorRecovery: true,
         });
+
+        if (ast.errors && ast.errors.length > 0) {
+          console.warn(`[Graph] Recovered from ${ast.errors.length} syntax errors in ${relativePath}. Data might be incomplete.`);
+        }
 
         traverse(ast, {
           // 1. Capture Imports (ESM + CommonJS)
@@ -72,7 +77,7 @@ export class GraphBuilder {
 
         graph.files[relativePath] = { id: relativePath, imports, exports };
       } catch (error) {
-        console.warn(`[Graph] Failed to parse ${relativePath} for graph. Skipping.`);
+        console.warn(`[Graph] Failed to parse ${relativePath} for graph. Skipping. Error: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
 
