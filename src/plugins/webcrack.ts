@@ -1,5 +1,4 @@
 import { webcrack as wc } from "webcrack";
-import fs from "fs/promises";
 import path from "path";
 
 type File = {
@@ -13,8 +12,12 @@ export async function webcrack(
   const cracked = await wc(code);
   await cracked.save(outputDir);
 
-  const output = await fs.readdir(outputDir);
-  return output
-    .filter((file) => file.endsWith(".js"))
-    .map((file) => ({ path: path.join(outputDir, file) }));
+  if (cracked.bundle) {
+    return Array.from(cracked.bundle.modules.values()).map((m) => ({
+      path: path.join(outputDir, m.path),
+    }));
+  }
+
+  // If not a bundle, webcrack saves it as deobfuscated.js by default
+  return [{ path: path.join(outputDir, "deobfuscated.js") }];
 }

@@ -28,8 +28,21 @@ export class GraphBuilder {
 
       try {
         const ast = parse(code, {
-          sourceType: 'module',
-          plugins: ['jsx', 'typescript'],
+          sourceType: 'unambiguous',
+          plugins: [
+            'jsx', 
+            'typescript',
+            'doExpressions',
+            'exportDefaultFrom',
+            'functionBind',
+            'functionSent',
+            'importAssertions',
+            'importReflection',
+            'moduleBlocks',
+            'partialApplication',
+            'throwExpressions',
+            'decorators-legacy'
+          ],
           errorRecovery: true,
         });
 

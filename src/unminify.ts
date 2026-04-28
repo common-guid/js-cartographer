@@ -30,7 +30,13 @@ export async function unminify(
   for (const task of tasks) {
     ensureFileExists(task.jsPath);
     const bundledCode = await fs.readFile(task.jsPath, "utf-8");
-    const extractedFiles = await webcrack(bundledCode, outputDir);
+    
+    // Use a sub-directory per task if there are multiple tasks to avoid collisions
+    const taskOutputDir = tasks.length > 1 
+      ? path.join(outputDir, path.basename(task.jsPath, path.extname(task.jsPath)))
+      : outputDir;
+      
+    const extractedFiles = await webcrack(bundledCode, taskOutputDir);
 
     let sourcemapService: SourcemapService | undefined;
     if (task.mapPath) {
@@ -69,6 +75,12 @@ export async function unminify(
 
     async function processFile(file: { path: string; sourcemapService?: SourcemapService }, index: number) {
       try {
+        const stats = await fs.stat(file.path);
+        if (stats.isDirectory()) {
+          verbose.log(`Skipping directory ${file.path}`);
+          return;
+        }
+
         console.log(`Processing file ${index + 1}/${totalFiles}`);
 
         let code = await fs.readFile(file.path, "utf-8");

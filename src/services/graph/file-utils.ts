@@ -7,8 +7,14 @@ export async function getFiles(dir: string): Promise<string[]> {
   const files = await Promise.all(
     dirents.map(async (dirent) => {
       const res = path.resolve(dir, dirent.name);
-      return dirent.isDirectory() ? getFiles(res) : res;
+      if (dirent.isDirectory()) {
+        return getFiles(res);
+      }
+      if (dirent.isFile() && (dirent.name.endsWith('.js') || dirent.name.endsWith('.ts'))) {
+        return [res];
+      }
+      return [];
     })
   );
-  return files.flat().filter((f) => f.endsWith('.js') || f.endsWith('.ts'));
+  return files.flat();
 }

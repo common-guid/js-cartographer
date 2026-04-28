@@ -25,7 +25,20 @@ export async function findApiSinks(code: string): Promise<ApiSink[]> {
       sourceType: "unambiguous",
       parserOpts: {
         errorRecovery: true,
-        plugins: ["jsx", "typescript"]
+        plugins: [
+            'jsx', 
+            'typescript',
+            'doExpressions',
+            'exportDefaultFrom',
+            'functionBind',
+            'functionSent',
+            'importAssertions',
+            'importReflection',
+            'moduleBlocks',
+            'partialApplication',
+            'throwExpressions',
+            'decorators-legacy'
+        ]
       }
     });
     if (!ast) return [];

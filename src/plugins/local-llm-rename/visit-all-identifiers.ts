@@ -23,7 +23,20 @@ export async function visitAllIdentifiers(
   const ast = await parseAsync(code, {
     sourceType: "unambiguous",
     parserOpts: {
-      plugins: ["jsx", "typescript"]
+      plugins: [
+        'jsx', 
+        'typescript',
+        'doExpressions',
+        'exportDefaultFrom',
+        'functionBind',
+        'functionSent',
+        'importAssertions',
+        'importReflection',
+        'moduleBlocks',
+        'partialApplication',
+        'throwExpressions',
+        'decorators-legacy'
+      ]
     }
   });
   const renames = new Set<string>();

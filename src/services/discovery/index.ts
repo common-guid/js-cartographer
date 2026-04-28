@@ -17,6 +17,7 @@ export class DiscoveryService {
       entries.map(async (entry) => {
         const fullPath = path.join(dir, entry.name);
         if (entry.isDirectory()) {
+          if (entry.name.startsWith('.')) return [];
           return this.scanDirectory(fullPath);
         } else if (entry.isFile() && entry.name.endsWith(".js")) {
           return [fullPath];
