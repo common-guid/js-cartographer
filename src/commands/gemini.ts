@@ -11,6 +11,7 @@ import { WakaruSanitizer } from "../services/sanitizer/index.js";
 import { DEFAULT_FILE_CONCURRENCY } from "../unminify.js";
 import { DiscoveryService } from "../services/discovery/index.js";
 import { stat } from "node:fs/promises";
+import { KeyManager } from "../services/key-manager/index.js";
 
 export const azure = cli()
   .name("gemini")

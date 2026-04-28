@@ -51,14 +51,6 @@ export async function unminify(
   }
 
   try {
-    // Build Module Graph (Phase 4)
-    // We build the graph after unbundling all chunks to ensure cross-chunk references are captured if possible
-    const graphBuilder = new GraphBuilder();
-    const graph = await graphBuilder.build(outputDir);
-    const graphPath = path.join(outputDir, "module-graph.json");
-    await fs.writeFile(graphPath, JSON.stringify(graph, null, 2));
-    console.log(`[Graph] Dependency map saved to ${graphPath}`);
-
     const totalFiles = allExtractedFiles.length;
     const effectiveConcurrency = Math.max(
       1,
@@ -121,6 +113,14 @@ export async function unminify(
     await Promise.all(
       allExtractedFiles.map((file, i) => limit(() => processFile(file, i)))
     );
+
+    // Build Module Graph (Phase 4)
+    // We build the graph after unminifying all files to ensure we parse the cleaned up code
+    const graphBuilder = new GraphBuilder();
+    const graph = await graphBuilder.build(outputDir);
+    const graphPath = path.join(outputDir, "module-graph.json");
+    await fs.writeFile(graphPath, JSON.stringify(graph, null, 2));
+    console.log(`[Graph] Dependency map saved to ${graphPath}`);
   } finally {
     // Clean up all sourcemap services
     const services = new Set(allExtractedFiles.map(f => f.sourcemapService).filter(Boolean));

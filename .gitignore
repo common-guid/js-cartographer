@@ -2,6 +2,7 @@ models
 output
 dist
 test-output
+test-output-fixture
 .env
 dist.tar.gz
 
